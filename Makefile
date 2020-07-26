@@ -1,7 +1,11 @@
 CC=riscv64-unknown-elf-gcc
-CFLAGS=-march=rv32imac -mabi=ilp32 -Os
 AS=riscv64-unknown-elf-as
+LD=riscv64-unknown-elf-ld
 OBJCOPY=riscv64-unknown-elf-objcopy
+
+CFLAGS=-march=rv32imac -mabi=ilp32 -Os --entry main
+LDFLAGS=-m elf32lriscv -Ttext 0x20010000 -e 0x20010000
+ASFLAGS=-march=rv32imac -mabi=ilp32
 
 all: hello.hex
 
@@ -13,14 +17,15 @@ upload: hello.hex
 %.hex: %.elf
 	$(OBJCOPY) -O ihex $< $@
 
-%.elf: %.S
-	$(AS) $< -o $@
+%.elf: %.o
+	$(LD) $(LDFLAGS) $< -o $@
+
+%.o: %.S
+	$(AS) $(ASFLAGS) $< -o $@
 
 %.S: %.c
 	$(CC) $(CFLAGS) -S $< -o $@
 
 .PHONY: clean
 clean:
-	FILES=hehe; \
-	echo $$FILES; \
-	rm -rf $(wildcard *.hex) $(wildcard *.elf)
+	rm -rf $(wildcard *.hex) $(wildcard *.elf) $(wildcard *.S) $(wildcard *.o)
