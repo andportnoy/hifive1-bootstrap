@@ -3,13 +3,15 @@ AS=riscv64-unknown-elf-as
 LD=riscv64-unknown-elf-ld
 OBJCOPY=riscv64-unknown-elf-objcopy
 
-CFLAGS=-march=rv32imac -mabi=ilp32 -Os --entry main
+CFLAGS=-march=rv32imac -mabi=ilp32 -Os
 LDFLAGS=-m elf32lriscv -Ttext 0x20010000 -e 0x20010000
 ASFLAGS=-march=rv32imac -mabi=ilp32
 
-all: hello.hex
+HEX ?= hello.hex
 
-upload: hello.hex
+all: $(HEX)
+
+upload: $(HEX)
 	FULLPATH=$(realpath $<); \
 	echo "loadfile $${FULLPATH}\nrnh\nexit" \
 	  | JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1
@@ -21,6 +23,9 @@ upload: hello.hex
 	$(LD) $(LDFLAGS) $< -o $@
 
 %.o: %.S
+	$(AS) $(ASFLAGS) $< -o $@
+
+%.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 %.S: %.c
