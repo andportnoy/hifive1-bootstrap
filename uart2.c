@@ -3,6 +3,12 @@
 typedef uint8_t u8;
 typedef uint32_t u32;
 
+enum {
+	D0=16, D1, D2, D3, D4, D5, D6, D7,
+	D8=0, D9, D10, D11, D12, D13, /* D14 is ground */
+	D15=9, D16, D17, D18, D19,
+};
+
 struct uart {
 	u32 txdata;
 	u32 rxdata;
@@ -39,13 +45,12 @@ void printchar(char c);
 void main(void) {
 	struct gpio *volatile gpio = (struct gpio *)0x10012000;
 	/*
-	 * GPIO 17 corresponds to DIG11, had to refer to the schematics to
-	 * figure this out
+	 * pin marked 17 corresponds to bit 11, had to refer to the schematics
+	 * to figure this out
 	 */
-	gpio->output_en  = gpio->output_en  | BIT(11);
-	gpio->output_val = gpio->output_val | BIT(11);
-	printword(gpio->input_en);
-	printword(gpio->input_en);
+	gpio->output_en  = gpio->output_en  | BIT(D17);
+	gpio->output_val = gpio->output_val | BIT(D17);
+	printword(0xdeadbeef);
 	print("\r\n\r\n");
 }
 
