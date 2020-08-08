@@ -1,4 +1,5 @@
 #include <stdint.h>
+#define BIT(i) (1<<i)
 typedef uint8_t u8;
 typedef uint32_t u32;
 
@@ -37,19 +38,22 @@ void printchar(char c);
 
 void main(void) {
 	struct gpio *volatile gpio = (struct gpio *)0x10012000;
-	gpio->output_en = gpio->output_en | (0xd << 19);
-	printword(gpio->out_xor);
+	/*
+	 * GPIO 17 corresponds to DIG11, had to refer to the schematics to
+	 * figure this out
+	 */
+	gpio->output_en  = gpio->output_en  | BIT(11);
+	gpio->output_val = gpio->output_val | BIT(11);
+	printword(gpio->input_en);
+	printword(gpio->input_en);
 	print("\r\n\r\n");
 }
 
 void printword(u32 w) {
 	print("0x");
 	for (int i=0; i<32; i+=4) {
-		u8 nibble = (w >> (28-i)) & 0xf;
-		if (0 <= nibble && nibble <= 9)
-			printchar('0'+nibble);
-		else
-			printchar('a'-0xa+nibble);
+		u8 n = (w>>(28-i))&0xf;
+		printchar(n<0xa? '0'+n: 'a'-0xa+n);
 	}
 }
 
