@@ -1,10 +1,12 @@
+ARCH=rv32i
+
 CC=riscv64-unknown-elf-gcc
 AS=riscv64-unknown-elf-as
 LD=riscv64-unknown-elf-ld
 OBJCOPY=riscv64-unknown-elf-objcopy
 
-CFLAGS=-march=rv32imac -mabi=ilp32 -Os
-ASFLAGS=-march=rv32imac -mabi=ilp32
+CFLAGS=-march=$(ARCH) -mabi=ilp32 -Os
+ASFLAGS=-march=$(ARCH) -mabi=ilp32
 LDFLAGS=-m elf32lriscv -Ttext 0x20010000 -Tdata 0x80000000
 
 T ?= hello
