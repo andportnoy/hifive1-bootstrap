@@ -18,6 +18,9 @@ upload: $(T).hex
 	echo "loadfile $${FULLPATH}\nrnh\nexit" \
 	  | JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1
 
+%.lst: %.elf
+	riscv64-unknown-elf-objdump -d -M no-aliases $< > $@
+
 %.hex: %.elf
 	$(OBJCOPY) -O ihex $< $@
 
@@ -35,4 +38,4 @@ upload: $(T).hex
 
 .PHONY: clean
 clean:
-	rm -rf $(wildcard *.hex) $(wildcard *.elf) $(wildcard *.S) $(wildcard *.o)
+	rm -rf $(wildcard *.hex) $(wildcard *.elf) $(wildcard *.S) $(wildcard *.o) $(wildcard *.lst)
