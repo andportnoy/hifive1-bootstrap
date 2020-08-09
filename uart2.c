@@ -49,6 +49,7 @@ void printword(u32 w);
 void printchar(char c);
 void ledbyte(u8 byte);
 u64 cycle(void);
+void sleep(u32 cycles);
 
 enum {
 	o0=BIT(D9), o1=BIT(D8), o2=BIT(D7), o3=BIT(D6),
@@ -63,8 +64,11 @@ void main(void) {
 	 * - read the value
 	 */
 	gpio->output_en  |= o7|o6|o5|o4|o3|o2|o1|o0;
-	for (;;)
-		ledbyte(cycle()>>20);
+	for (;;) {
+		u64 cur = cycle();
+		printword(cycle());
+		sleep(0x100000-(cycle()-cur));
+	}
 }
 
 u64 cycle(void) {
@@ -74,6 +78,12 @@ u64 cycle(void) {
 		"csrrc %1, cycleh, x0"
 		: "=r" (l), "=r" (h));
 	return (u64)h<<32|l;
+}
+
+void sleep(u32 cycles) {
+	u64 cur = cycle();
+	while (cycle()-cur < cycles)
+		;
 }
 
 void ledbyte(u8 byte) {
@@ -90,11 +100,11 @@ void ledbyte(u8 byte) {
 }
 
 void printword(u32 w) {
-	print("0x");
 	for (int i=0; i<32; i+=4) {
 		u8 n = (w>>(28-i))&0xf;
 		printchar(n<0xa? '0'+n: 'a'-0xa+n);
 	}
+	printchar('\n');
 }
 
 void uartinit(void) {
@@ -104,11 +114,16 @@ void uartinit(void) {
 
 void printchar(char c) {
 	struct uart *volatile uart = (struct uart *)0x10013000;
-	uart->txdata = c;
+	for (;;) {
+		if (!(uart->txdata>>31)) {
+			uart->txdata = c;
+			break;
+		}
+	}
 }
 
 void print(char *s) {
 	struct uart *volatile uart = (struct uart *)0x10013000;
 	while (*s)
-		uart->txdata = *s++;
+		printchar(*s++);
 }
