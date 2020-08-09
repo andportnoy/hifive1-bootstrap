@@ -120,17 +120,14 @@ void printcycle(void) {
 
 void uartinit(void) {
 	struct uart *volatile uart = (struct uart *)0x10013000;
-	uart->txctrl = 1;
+	uart->txctrl |= 1;
 }
 
 void printchar(char c) {
 	struct uart *volatile uart = (struct uart *)0x10013000;
-	for (;;) {
-		if (!(uart->txdata>>31)) {
-			uart->txdata = c;
-			break;
-		}
-	}
+	while (uart->txdata>>31)
+		;
+	uart->txdata = c;
 }
 
 void print(char *s) {
