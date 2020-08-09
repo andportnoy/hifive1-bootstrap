@@ -50,6 +50,7 @@ void printchar(char c);
 void ledbyte(u8 byte);
 u64 cycle(void);
 void sleep(u32 cycles);
+void printcycle(void);
 
 enum {
 	o0=BIT(D9), o1=BIT(D8), o2=BIT(D7), o3=BIT(D6),
@@ -63,11 +64,16 @@ void main(void) {
 	 * - enable input on the pin
 	 * - read the value
 	 */
-	gpio->output_en  |= o7|o6|o5|o4|o3|o2|o1|o0;
-	for (;;) {
-		u64 cur = cycle();
-		printword(cycle());
-		sleep(0x100000-(cycle()-cur));
+	gpio->output_en |= o7|o6|o5|o4|o3|o2|o1|o0;
+	const int nap = 0x100000;
+	int len = nap;
+	for (u64 start, end, diff=nap;; diff=end-start) {
+		start = cycle();
+		printcycle();
+		printchar('\n');
+		len -= diff-nap+6 /* diff=end-start takes 6 cycles? */;
+		sleep(len);
+		end = cycle();
 	}
 }
 
@@ -104,7 +110,12 @@ void printword(u32 w) {
 		u8 n = (w>>(28-i))&0xf;
 		printchar(n<0xa? '0'+n: 'a'-0xa+n);
 	}
-	printchar('\n');
+}
+
+void printcycle(void) {
+	u64 cur = cycle();
+	printword(cur>>32);
+	printword(cur);
 }
 
 void uartinit(void) {
