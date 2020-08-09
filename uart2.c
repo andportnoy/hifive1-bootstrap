@@ -57,20 +57,31 @@ enum {
 	o4=BIT(D5), o5=BIT(D4), o6=BIT(D3), o7=BIT(D2)
 };
 
+enum {
+	i0=BIT(D10),
+};
+
 void main(void) {
 	struct gpio *volatile gpio = (struct gpio *)0x10012000;
-	/* ok, I wanted to record the value of an input pin.
-	 * - enable the builtin pullup resistor.
-	 * - enable input on the pin
-	 * - read the value
-	 */
 	gpio->output_en |= o7|o6|o5|o4|o3|o2|o1|o0;
-	const int nap = 0x100000;
+	gpio->input_en  |= i0;
+	gpio->pue       |= i0; /* internal pull up resistor enable */
+
+	const int nap = 0x80000;
 	int len = nap;
+	int pressednow = 0, pressedbefore = 0;
+	u8 byte = 1;
+	ledbyte(byte);
 	for (u64 start, end, diff=nap;; diff=end-start) {
 		start = cycle();
-		printcycle();
-		printchar('\n');
+		pressedbefore = pressednow;
+		pressednow = !(gpio->input_val&i0);
+		int buttonpress = !pressednow && pressedbefore;
+		if (buttonpress) {
+			print("Button pressed!\n");
+			byte = (byte<<1)|(byte>>7);
+			ledbyte(byte);
+		}
 		len -= diff-nap+6 /* diff=end-start takes 6 cycles? */;
 		sleep(len);
 		end = cycle();
