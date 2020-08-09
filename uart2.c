@@ -67,7 +67,7 @@ void main(void) {
 	gpio->input_en  |= i0;
 	gpio->pue       |= i0; /* internal pull up resistor enable */
 
-	const int nap = 0x80000;
+	const int nap = 0x100000;
 	int len = nap;
 	int pressednow = 0, pressedbefore = 0;
 	u8 byte = 1;
@@ -75,13 +75,15 @@ void main(void) {
 	for (u64 start, end, diff=nap;; diff=end-start) {
 		start = cycle();
 		pressedbefore = pressednow;
-		pressednow = !(gpio->input_val&i0);
-		int buttonpress = !pressednow && pressedbefore;
+		pressednow = !(gpio->input_val&i0)? pressednow+1: 0;
+		int buttonpress = (!pressednow && pressedbefore) |
+			          (pressednow > 6);
 		if (buttonpress) {
 			print("Button pressed!\n");
 			byte = (byte<<1)|(byte>>7);
 			ledbyte(byte);
-		}
+		} else
+			printchar('\n');
 		len -= diff-nap+6 /* diff=end-start takes 6 cycles? */;
 		sleep(len);
 		end = cycle();
