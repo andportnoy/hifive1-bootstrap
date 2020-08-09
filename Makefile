@@ -19,7 +19,7 @@ ledcycle: utils.o
 
 upload: $(T).hex
 	FULLPATH=$(realpath $<); \
-	echo "loadfile $${FULLPATH}\nrnh\nexit" \
+	echo -e "loadfile $${FULLPATH}\nrnh\nexit" \
 	  | JLinkExe -device FE310 -if JTAG -speed 4000 -jtagconf -1,-1 -autoconnect 1
 
 %.hex: %.elf
@@ -29,7 +29,7 @@ upload: $(T).hex
 	riscv64-unknown-elf-objdump -d -M no-aliases $< > $@
 
 %.elf: %
-	cp $< $@
+	mv $< $@
 
 %.elf: %.s
 	$(AS) $(ASFLAGS) $< -o $*.o
