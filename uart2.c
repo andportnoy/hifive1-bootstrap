@@ -1,6 +1,9 @@
 #include <stdint.h>
 
-#define BIT(i)         (1<<i)
+#define GPIOADDR 0x10012000
+#define UARTADDR 0x10013000
+
+#define BIT(i) (1<<i)
 
 typedef uint8_t u8;
 typedef uint32_t u32;
@@ -20,7 +23,7 @@ struct uart {
 	u32 ie;
 	u32 ip;
 	u32 div;
-};
+} volatile *const uart = (void *)UARTADDR;
 
 struct gpio {
 	u32 input_val;
@@ -41,7 +44,7 @@ struct gpio {
 	u32 iof_en;
 	u32 iof_sel;
 	u32 out_xor;
-};
+} volatile *const gpio = (void *)GPIOADDR;
 
 void uartinit(void);
 void print(char *s);
@@ -62,7 +65,6 @@ enum {
 };
 
 void main(void) {
-	struct gpio *volatile gpio = (struct gpio *)0x10012000;
 	gpio->output_en |= o7|o6|o5|o4|o3|o2|o1|o0;
 	gpio->input_en  |= i0;
 	gpio->pue       |= i0; /* internal pull up resistor enable */
@@ -106,7 +108,6 @@ void sleep(u32 cycles) {
 }
 
 void ledbyte(u8 byte) {
-	struct gpio *volatile gpio = (struct gpio *)0x10012000;
 	gpio->output_val =  (gpio->output_val & ~(o7|o6|o5|o4|o3|o2|o1|o0)) |
 			    (byte&BIT(0)? o0: 0) |
 		            (byte&BIT(1)? o1: 0) |
@@ -132,19 +133,16 @@ void printcycle(void) {
 }
 
 void uartinit(void) {
-	struct uart *volatile uart = (struct uart *)0x10013000;
 	uart->txctrl |= 1;
 }
 
 void printchar(char c) {
-	struct uart *volatile uart = (struct uart *)0x10013000;
 	while (uart->txdata>>31)
 		;
 	uart->txdata = c;
 }
 
 void print(char *s) {
-	struct uart *volatile uart = (struct uart *)0x10013000;
 	while (*s)
 		printchar(*s++);
 }
