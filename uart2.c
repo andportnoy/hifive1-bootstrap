@@ -1,7 +1,10 @@
 #include <stdint.h>
-#define BIT(i) (1<<i)
+
+#define BIT(i)         (1<<i)
+
 typedef uint8_t u8;
 typedef uint32_t u32;
+typedef uint64_t u64;
 
 enum {
 	D0=16, D1, D2, D3, D4, D5, D6, D7,
@@ -34,6 +37,9 @@ struct gpio {
 	u32 high_ip;
 	u32 low_ie;
 	u32 low_ip;
+	/* forums.sifive.com/t/gpio-pins-pull-up-issue-in-hifive-1-rev-b/3419 */
+	u32 iof_en;
+	u32 iof_sel;
 	u32 out_xor;
 };
 
@@ -41,17 +47,46 @@ void uartinit(void);
 void print(char *s);
 void printword(u32 w);
 void printchar(char c);
+void ledbyte(u8 byte);
+u64 cycle(void);
+
+enum {
+	o0=BIT(D9), o1=BIT(D8), o2=BIT(D7), o3=BIT(D6),
+	o4=BIT(D5), o5=BIT(D4), o6=BIT(D3), o7=BIT(D2)
+};
 
 void main(void) {
 	struct gpio *volatile gpio = (struct gpio *)0x10012000;
-	/*
-	 * pin marked 17 corresponds to bit 11, had to refer to the schematics
-	 * to figure this out
+	/* ok, I wanted to record the value of an input pin.
+	 * - enable the builtin pullup resistor.
+	 * - enable input on the pin
+	 * - read the value
 	 */
-	gpio->output_en  = gpio->output_en  | BIT(D17);
-	gpio->output_val = gpio->output_val | BIT(D17);
-	printword(0xdeadbeef);
-	print("\r\n\r\n");
+	gpio->output_en  |= o7|o6|o5|o4|o3|o2|o1|o0;
+	for (;;)
+		ledbyte(cycle()>>20);
+}
+
+u64 cycle(void) {
+	u32 l, h;
+	asm volatile (
+		"csrrc %0, cycle,  x0\n\t"
+		"csrrc %1, cycleh, x0"
+		: "=r" (l), "=r" (h));
+	return (u64)h<<32|l;
+}
+
+void ledbyte(u8 byte) {
+	struct gpio *volatile gpio = (struct gpio *)0x10012000;
+	gpio->output_val =  (gpio->output_val & ~(o7|o6|o5|o4|o3|o2|o1|o0)) |
+			    (byte&BIT(0)? o0: 0) |
+		            (byte&BIT(1)? o1: 0) |
+		            (byte&BIT(2)? o2: 0) |
+		            (byte&BIT(3)? o3: 0) |
+		            (byte&BIT(4)? o4: 0) |
+		            (byte&BIT(5)? o5: 0) |
+		            (byte&BIT(6)? o6: 0) |
+		            (byte&BIT(7)? o7: 0);
 }
 
 void printword(u32 w) {
