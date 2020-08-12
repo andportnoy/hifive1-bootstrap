@@ -8,13 +8,15 @@ OBJCOPY=riscv64-unknown-elf-objcopy
 INCLUDE=project.h
 CFLAGS =-march=$(ARCH) -mabi=ilp32 -Os -include $(INCLUDE)
 CFLAGS+=-nostartfiles -nostdlib -ffunction-sections -fdata-sections
+CFLAGS+=-Wall -Wextra -pedantic
 ASFLAGS=-march=$(ARCH) -mabi=ilp32
 LDFLAGS=-Ttext 0x20010000 -Tdata 0x80000000 -e main -Wl,--gc-sections
 
-T ?= ledcycle
+T ?= clock
 
 all: $(T).hex
 
+clock: utils.o
 ledcycle: utils.o
 
 upload: $(T).hex
@@ -37,4 +39,4 @@ upload: $(T).hex
 
 .PHONY: clean
 clean:
-	rm -rf *.hex *.o *.lst *.elf
+	rm -rf *.hex *.o *.lst *.elf $T

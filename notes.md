@@ -139,3 +139,11 @@ Actually, GPIO 2 should be fine. GPIO 10 was the weird one, not DIG 10.
 The button seems to be working. Now how do I detect a button press? A button
 press is when a button is first detected to be pressed, then depressed.
 Basically a button press is a transition from pressed to depressed.
+
+Goals:
+[ ] use PLL for a higher frequency clock
+	[ ] verify clock frequency
+[ ] try to configure a timer + interrupt
+
+I figured out that the clock is in fact 16 MHz. I will need to set it as input
+to PLL.

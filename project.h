@@ -1,7 +1,9 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #define GPIOADDR 0x10012000
 #define UARTADDR 0x10013000
+#define PRCIADDR 0x10008000
 
 #define BIT(i) (1<<i)
 
