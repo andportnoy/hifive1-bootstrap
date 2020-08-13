@@ -49,3 +49,77 @@ void print(char *s) {
 	while (*s)
 		printchar(*s++);
 }
+
+void prciprint(struct prci *prciptr) {
+	struct prci val = *prciptr;
+
+	print("ring oscillator:\n");
+
+	print("divider: ");
+	printword(val.hfroscdiv);
+	printchar('\n');
+
+	print("trim: ");
+	printword(val.hfrosctrim);
+	printchar('\n');
+
+	print("enable: ");
+	printword(val.hfroscen);
+	printchar('\n');
+
+	print("ready: ");
+	printword(val.hfroscrdy);
+	printchar('\n');
+
+	printchar('\n');
+
+	print("crystal oscillator:\n");
+
+	print("enable: ");
+	printword(val.hfxoscen);
+	printchar('\n');
+
+	print("ready: ");
+	printword(val.hfxoscrdy);
+	printchar('\n');
+
+	printchar('\n');
+
+	print("pll\n");
+
+	print("pllr: ");
+	printword(val.pllr);
+	printchar('\n');
+
+	print("pllf: ");
+	printword(val.pllf);
+	printchar('\n');
+
+	print("pllq: ");
+	printword(val.pllq);
+	printchar('\n');
+
+	print("pllsel: ");
+	printword(val.pllsel);
+	printchar('\n');
+
+	print("pllrefsel: ");
+	printword(val.pllrefsel);
+	printchar('\n');
+
+	print("pllbypass: ");
+	printword(val.pllbypass);
+	printchar('\n');
+
+	print("plllock: ");
+	printword(val.plllock);
+	printchar('\n');
+
+	print("plloutdiv: ");
+	printword(val.plloutdivval);
+	printchar('\n');
+
+	print("plloutdivby1: ");
+	printword(val.plloutdivby1);
+	printchar('\n');
+}

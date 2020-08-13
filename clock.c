@@ -1,72 +1,28 @@
 struct uart volatile *const uart = (void *)UARTADDR;
 struct prci volatile *const prci = (void *)PRCIADDR;
 
-void prciprint(void) {
-	struct prci val = *prci;
-
-	print("ring oscillator:\n");
-
-	print("divider: ");
-	printword(val.hfroscdiv);
-	printchar('\n');
-
-	print("trim: ");
-	printword(val.hfrosctrim);
-	printchar('\n');
-
-	print("enable: ");
-	printword(val.hfroscen);
-	printchar('\n');
-
-	print("ready: ");
-	printword(val.hfroscrdy);
-	printchar('\n');
-
-	printchar('\n');
-
-	print("crystal oscillator:\n");
-
-	print("enable: ");
-	printword(val.hfxoscen);
-	printchar('\n');
-
-	print("ready: ");
-	printword(val.hfxoscrdy);
-	printchar('\n');
-
-	printchar('\n');
-
-	print("pllr: ");
-	printword(val.pllr);
-	printchar('\n');
-
-	print("pllf: ");
-	printword(val.pllf);
-	printchar('\n');
-
-	print("pllq: ");
-	printword(val.pllq);
-	printchar('\n');
-
-	print("pllsel: ");
-	printword(val.pllsel);
-	printchar('\n');
-
-	print("pllrefsel: ");
-	printword(val.pllrefsel);
-	printchar('\n');
-
-	print("pllbypass: ");
-	printword(val.pllbypass);
-	printchar('\n');
-
-	print("plllock: ");
-	printword(val.plllock);
-	printchar('\n');
-}
-
+/*
+ * Let's take the 16 MHz oscillator and transform as follows:
+ * pllr {1}:  16MHz/ 2 -> 8MHz
+ * pllf {39}:  8MHz*80 -> 640MHz
+ * pllq {1}: 640MHz/ 2 -> 320MHz
+ *
+ * Actually, for now let's try:
+ * pllr {1}: 16MHz/2 ->  8MHz
+ * pllf {3}:  8MHz*8 -> 64MHz
+ * pllq {1}: 64MHz/2 -> 32MHz
+ *
+ * To view output on the serial port,
+ * run with baudrate 230400 = 2*115200.
+ */
 void main(void) {
-	for (;; sleep(16000000)) {
+	prci->pllsel = 0;
+	prci->pllr = 1;
+	prci->pllf = 3;
+	prci->pllq = 1;
+	prci->pllsel = 1;
+	prci->pllbypass = 0;
+	for (;; sleep(16e6)) {
 		printcycle();
 		printchar('\n');
 	}

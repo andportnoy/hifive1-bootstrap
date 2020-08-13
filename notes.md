@@ -146,4 +146,18 @@ Goals:
 [ ] try to configure a timer + interrupt
 
 I figured out that the clock is in fact 16 MHz. I will need to set it as input
-to PLL.
+to PLL. Ok, it works by running the following:
+	prci->pllr = 0x1;
+	prci->pllf = 0x3;
+	prci->pllq = 0x1;
+	prci->pllsel = 1;
+	prci->pllbypass = 0;
+Calculations:
+pllr {0x1}: 16MHz/2 ->  8MHz
+pllf {0x3}:  8MHz*8 -> 64MHz
+pllq {0x1}: 64MHz/2 -> 32MHz
+
+The problem is that UART baud rate needs to be adjusted accordingly on the
+receiving side, so it's easier to just run the default 16 MHz clock and use the
+115200 UART baud rate. For 320 MHz I would have to multiply the baud rate by
+20?
