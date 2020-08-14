@@ -17,6 +17,25 @@ u64 cycle(void) {
 	return (u64)h<<32|l;
 }
 
+u64 mtimerd(void) {
+	return *((u64 *)MTIMEADDR);
+}
+
+u32 mtvecrd(void) {
+	u32 value;
+	__asm__ volatile (
+		"csrrs %0, mtvec, zero"
+		: "=r" (value));
+	return value;
+}
+
+void mtvecwr(u32 value) {
+	__asm__ volatile (
+		"csrrw zero, mtvec, %0"
+		:
+		: "r" (value));
+}
+
 void sleep(u32 cycles) {
 	u64 cur = cycle();
 	while (cycle()-cur < cycles)

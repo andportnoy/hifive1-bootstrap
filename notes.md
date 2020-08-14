@@ -140,6 +140,7 @@ The button seems to be working. Now how do I detect a button press? A button
 press is when a button is first detected to be pressed, then depressed.
 Basically a button press is a transition from pressed to depressed.
 
+---
 Goals:
 [ ] use PLL for a higher frequency clock
 	[ ] verify clock frequency
@@ -161,3 +162,30 @@ The problem is that UART baud rate needs to be adjusted accordingly on the
 receiving side, so it's easier to just run the default 16 MHz clock and use the
 115200 UART baud rate. For 320 MHz I would have to multiply the baud rate by
 20?
+
+---
+Now I want to try to use a timer interrupt. Let's implement one to print the
+current cycle every half a second or something.
+Actually, first let's just confirm that it's working by printing something from
+inside the interrupt.
+- set mtvec to the interrupt handler address
+  - make sure the address is 64 byte aligned
+  - (thus setting the mode to direct)
+- set mie.MTIE to enable machine timer interrupts
+- set mtimecmp to some value
+- set mstatus.MIE to enable interrupts globally
+- inside the interrupt, make sure to save any registers we're going to be using
+  is it possible to ensure this in C? yes, GCC supports an interrupt function
+  that will generate a prologue/epilogue for the interrupt
+  - print cause
+  - print cycle
+  - increment mtimecmp
+
+I see that __attribute__ ((interrupt)) generates code to save a bunch of
+registers. It saves too many. Can link time optimization fix this? GCC has it
+and it can be enabled with the flag -flto.
+Ok, let's just try to enable a timer interrupt. Sounds like CLINT will be
+responsible for that.
+
+Link time optimization really helped a lot! We're saving way fewer registers in
+the interrupt handler and many functions are inlined.

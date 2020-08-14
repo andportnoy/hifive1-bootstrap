@@ -93,3 +93,6 @@ u64 cycle(void);
 void sleep(u32 cycles);
 void printcycle(void);
 void prciprint(struct prci *prciptr);
+u64 mtimerd(void);
+u32 mtvecrd(void);
+void mtvecwr(u32 value);

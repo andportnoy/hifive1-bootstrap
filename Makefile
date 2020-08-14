@@ -18,6 +18,7 @@ all: $(T).hex
 
 clock: utils.o
 ledcycle: utils.o
+timer: utils.o
 
 upload: $(T).hex
 	FULLPATH=$(realpath $<); \

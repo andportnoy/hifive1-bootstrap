@@ -5,6 +5,9 @@
 #define UARTADDR 0x10013000
 #define PRCIADDR 0x10008000
 
+#define MTIMECMPADDR 0x2004000
+#define MTIMEADDR    0x200bff8
+
 #define BIT(i) (1<<i)
 
 typedef uint8_t u8;
