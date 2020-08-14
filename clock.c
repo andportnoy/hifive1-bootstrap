@@ -15,7 +15,7 @@ struct prci volatile *const prci = (void *)PRCIADDR;
  * To view output on the serial port,
  * run with baudrate 230400 = 2*115200.
  */
-void main(void) {
+int main(void) {
 	prci->pllsel = 0;
 	prci->pllr = 1;
 	prci->pllf = 3;

@@ -1,15 +1,16 @@
 extern struct uart volatile *const uart;
 
-void memcpy(void *dest, const void *src, size_t n) {
+void *memcpy(void *dest, const void *src, size_t n) {
 	u8 *d = dest;
 	const u8 *s = src;
 	for (size_t i=0; i<n; ++i)
 		d[i] = s[i];
+	return dest;
 }
 
 u64 cycle(void) {
 	u32 l, h;
-	asm volatile (
+	__asm__ volatile (
 		"csrrc %0, cycle,  x0\n\t"
 		"csrrc %1, cycleh, x0"
 		: "=r" (l), "=r" (h));

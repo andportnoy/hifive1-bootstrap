@@ -22,7 +22,7 @@ void ledbyte(u8 byte) {
 		            (byte&BIT(7)? o7: 0);
 }
 
-void main(void) {
+int main(void) {
 	gpio->output_en |= o7|o6|o5|o4|o3|o2|o1|o0;
 	gpio->input_en  |= i0;
 	gpio->pue       |= i0; /* internal pull up resistor enable */

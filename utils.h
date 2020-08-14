@@ -83,7 +83,7 @@ enum {
 	D15=9, D16, D17, D18, D19,
 };
 
-void memcpy(void *dest, const void *src, size_t n);
+void *memcpy(void *dest, const void *src, size_t n);
 
 void uartinit(void);
 void print(char *s);
