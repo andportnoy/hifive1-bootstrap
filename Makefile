@@ -7,7 +7,7 @@ OBJCOPY=riscv64-unknown-elf-objcopy
 
 INCLUDE=project.h
 CFLAGS =-march=$(ARCH) -mabi=ilp32 -Os -include $(INCLUDE)
-CFLAGS+=-nostartfiles -nostdlib -ffunction-sections -fdata-sections
+CFLAGS+=-nostartfiles -nostdlib -ffunction-sections -fdata-sections -flto
 CFLAGS+=-Wall -Wextra -pedantic -std=c11
 ASFLAGS=-march=$(ARCH) -mabi=ilp32
 LDFLAGS=-Ttext 0x20010000 -Tdata 0x80000000 -e main -Wl,--gc-sections
