@@ -59,5 +59,6 @@ int main(void) {
 	timerinit(isr);
 
 	ledbyte(byte);
-	for (;;);
+	for (;;)
+		__asm__ ("wfi"); /* wait for interrupt */
 }
