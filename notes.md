@@ -195,3 +195,5 @@ Let's use a timer interrupt to check for button presses. Ideally this would be
 done using external interrupts instead.
 I was messing with a linker script to ensure that static global variables are
 placed in memory instead of flash.
+Ok, I got it to work by following instructions from
+http://bravegnu.org/gnu-eprog/data-in-ram.html.

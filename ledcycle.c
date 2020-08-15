@@ -22,14 +22,13 @@ void ledbyte(u8 byte) {
 		            (byte&BIT(7)? o7: 0);
 }
 
-int volatile __attribute__ ((aligned(8))) test = 0xdeadbeef;
-
 __attribute__ ((interrupt, aligned(64))) void isr(void) {
 	mcauseprint(mcauserd());
 	printword(mtvalrd());
 	printchar('\n');
 }
 
+int pressednow = 0, pressedbefore = 0;
 int main(void) {
 	mtvecwr((u32)isr);               /* set interrupt handler address */
 	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
@@ -39,7 +38,6 @@ int main(void) {
 
 	const int nap = 0x100000;
 	int len = nap;
-	int pressednow = 0, pressedbefore = 0;
 	u8 byte = 1;
 	ledbyte(byte);
 	for (u64 start, end, diff=nap;; diff=end-start) {

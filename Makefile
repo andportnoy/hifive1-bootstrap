@@ -11,17 +11,16 @@ CFLAGS =-march=$(ARCH) -mabi=ilp32 -Os -include $(INCLUDE)
 CFLAGS+=-nostartfiles -nostdlib -ffunction-sections -fdata-sections -flto
 CFLAGS+=-Wall -Wextra -pedantic -std=c11
 ASFLAGS=-march=$(ARCH) -mabi=ilp32
-LDFLAGS=-T link.lds
-#-Wl,--gc-sections
+LDFLAGS=-T link.lds -Wl,--gc-sections
 
 T ?= clock
 
 all: $(T).hex
 
-clock: utils.o
-ledcycle: utils.o
-timer: utils.o
-test: utils.o
+clock: utils.o raminit.o
+ledcycle: utils.o raminit.o
+timer: utils.o raminit.o
+test: utils.o raminit.o
 
 upload: $(T).hex
 	FULLPATH=$(realpath $<); \

@@ -1,5 +1,5 @@
 TARGET(elf32-littleriscv)
-ENTRY(main)
+ENTRY(raminit)
 MEMORY
 {
     ram (arw!xi) : ORIGIN = 0x80000000, LENGTH = 0x4000
@@ -10,12 +10,12 @@ SECTIONS
 	. = 0x20010000;
 	.text :
 	{
-		*(.text.startup.raminit .text.startup.main .text.startup*)
+		*(.text.raminit)
 		*(.text .text*)
 	} >rom
 	_raminit = .;
 	. = 0x80000000;
 	_ramstart = .;
-	.data : { *(.sdata*) } >ram AT>rom
+	.data : { *(.sdata*)} >ram AT>rom
 	_ramend = .;
 }
