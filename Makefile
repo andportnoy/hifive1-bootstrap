@@ -4,6 +4,7 @@ CC=riscv64-unknown-elf-gcc
 AS=riscv64-unknown-elf-as
 LD=riscv64-unknown-elf-ld
 OBJCOPY=riscv64-unknown-elf-objcopy
+OBJDUMP=riscv64-unknown-elf-objdump
 
 INCLUDE=project.h
 CFLAGS =-march=$(ARCH) -mabi=ilp32 -Os -include $(INCLUDE)
@@ -29,7 +30,7 @@ upload: $(T).hex
 	$(OBJCOPY) -O ihex $< $@
 
 %.lst: %.elf
-	riscv64-unknown-elf-objdump -d -M no-aliases $< > $@
+	$(OBJDUMP) -d -M no-aliases $< > $@
 
 %.elf: %
 	mv $< $@

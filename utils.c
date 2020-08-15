@@ -18,23 +18,32 @@ u64 cycle(void) {
 }
 
 u64 mtimerd(void) {
-	return *((u64 *)MTIMEADDR);
+	return *MTIMEPTR;
 }
 
-u32 mtvecrd(void) {
-	u32 value;
-	__asm__ volatile (
-		"csrrs %0, mtvec, zero"
-		: "=r" (value));
-	return value;
+void mtimewr(u64 v) {
+	*MTIMEPTR = v;
 }
 
-void mtvecwr(u32 value) {
-	__asm__ volatile (
-		"csrrw zero, mtvec, %0"
-		:
-		: "r" (value));
+u64 mtimecmprd(void) {
+	return *MTIMECMPPTR;
 }
+
+void mtimecmpwr(u64 v) {
+	*MTIMECMPPTR = v;
+}
+
+CSR32RD_DEF(mtvec)
+CSR32WR_DEF(mtvec)
+
+CSR32RD_DEF(mie)
+CSR32WR_DEF(mie)
+
+CSR32RD_DEF(mstatus)
+CSR32WR_DEF(mstatus)
+
+CSR32RD_DEF(mcause)
+CSR32WR_DEF(mcause)
 
 void sleep(u32 cycles) {
 	u64 cur = cycle();
@@ -47,6 +56,11 @@ void printword(u32 w) {
 		u8 n = (w>>(28-i))&0xf;
 		printchar(n<0xa? '0'+n: 'a'-0xa+n);
 	}
+}
+
+void printdword(u64 dw) {
+	printword(dw>>32);
+	printword(dw);
 }
 
 void printcycle(void) {
@@ -142,4 +156,17 @@ void prciprint(struct prci *prciptr) {
 	print("plloutdivby1: ");
 	printword(val.plloutdivby1);
 	printchar('\n');
+}
+
+void mcauseprint(u32 v) {
+	if (v & BIT(31)) {
+		switch (v & 0x3ff) {
+		case  3: print("software interrupt\n");     break;
+		case  7: print("timer interrupt\n");        break;
+		case 11: print("external interrupt\n");     break;
+		default: print("unknown interrupt type\n"); break;
+		}
+	} else {
+		print("exception\n");
+	}
 }

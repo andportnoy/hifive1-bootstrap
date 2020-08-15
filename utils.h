@@ -1,3 +1,16 @@
+#define CSR32RD_DECL(csr) u32 csr##rd(void)
+#define CSR32RD_DEF(csr) \
+	CSR32RD_DECL(csr) { \
+		u32 v; \
+		__asm__ volatile ("csrrs %0," #csr ",zero" : "=r" (v)); \
+		return v; \
+	}
+#define CSR32WR_DECL(csr) void csr##wr(u32 v)
+#define CSR32WR_DEF(csr) \
+	CSR32WR_DECL(csr) { \
+		__asm__ volatile ("csrrw zero," #csr ", %0" : : "r" (v)); \
+	}
+
 struct uart {
 	u32 txdata;
 	u32 rxdata;
@@ -88,11 +101,22 @@ void *memcpy(void *dest, const void *src, size_t n);
 void uartinit(void);
 void print(char *s);
 void printword(u32 w);
+void printdword(u64 dw);
 void printchar(char c);
 u64 cycle(void);
 void sleep(u32 cycles);
 void printcycle(void);
 void prciprint(struct prci *prciptr);
+void mcauseprint(u32 v);
 u64 mtimerd(void);
-u32 mtvecrd(void);
-void mtvecwr(u32 value);
+void mtimewr(u64 v);
+u64 mtimecmprd(void);
+void mtimecmpwr(u64 v);
+CSR32RD_DECL(mtvec);
+CSR32WR_DECL(mtvec);
+CSR32RD_DECL(mie);
+CSR32WR_DECL(mie);
+CSR32RD_DECL(mstatus);
+CSR32WR_DECL(mstatus);
+CSR32RD_DECL(mcause);
+CSR32WR_DECL(mcause);

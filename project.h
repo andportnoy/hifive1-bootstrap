@@ -8,6 +8,9 @@
 #define MTIMECMPADDR 0x2004000
 #define MTIMEADDR    0x200bff8
 
+#define MTIMECMPPTR ((u64 volatile *)0x2004000)
+#define MTIMEPTR    ((u64 volatile *)0x200bff8)
+
 #define BIT(i) (1<<i)
 
 typedef uint8_t u8;
