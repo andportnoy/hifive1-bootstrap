@@ -189,3 +189,9 @@ responsible for that.
 
 Link time optimization really helped a lot! We're saving way fewer registers in
 the interrupt handler and many functions are inlined.
+
+---
+Let's use a timer interrupt to check for button presses. Ideally this would be
+done using external interrupts instead.
+I was messing with a linker script to ensure that static global variables are
+placed in memory instead of flash.

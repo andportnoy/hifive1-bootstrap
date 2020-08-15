@@ -11,7 +11,8 @@ CFLAGS =-march=$(ARCH) -mabi=ilp32 -Os -include $(INCLUDE)
 CFLAGS+=-nostartfiles -nostdlib -ffunction-sections -fdata-sections -flto
 CFLAGS+=-Wall -Wextra -pedantic -std=c11
 ASFLAGS=-march=$(ARCH) -mabi=ilp32
-LDFLAGS=-Ttext 0x20010000 -Tdata 0x80000000 -e main -Wl,--gc-sections
+LDFLAGS=-T link.lds
+#-Wl,--gc-sections
 
 T ?= clock
 
@@ -20,6 +21,7 @@ all: $(T).hex
 clock: utils.o
 ledcycle: utils.o
 timer: utils.o
+test: utils.o
 
 upload: $(T).hex
 	FULLPATH=$(realpath $<); \
@@ -30,7 +32,7 @@ upload: $(T).hex
 	$(OBJCOPY) -O ihex $< $@
 
 %.lst: %.elf
-	$(OBJDUMP) -d -M no-aliases $< > $@
+	$(OBJDUMP) -d -t -M no-aliases $< > $@
 
 %.elf: %
 	mv $< $@
