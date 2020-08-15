@@ -93,7 +93,7 @@ struct prci {
 
 /* map pins as marked on the board to internal GPIO pin numbers */
 enum {
-	D0=16, D1, D2, D3, D4, D5, D6, D7,
+	D0=16, D1, D2, D3, GLED=D3, D4, D5, BLED=D5, D6, RLED=D6, D7,
 	D8=0, D9, D10, D11, D12, D13, /* D14 is ground */
 	D15=9, D16, D17, D18, D19,
 };
