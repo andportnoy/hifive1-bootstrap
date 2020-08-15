@@ -1,3 +1,5 @@
+#define SLEEP (0x8000 / 20) /* every 50 milliseconds */
+
 struct uart volatile *const uart = (void *)UARTADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
@@ -22,38 +24,40 @@ void ledbyte(u8 byte) {
 		            (byte&BIT(7)? o7: 0);
 }
 
+u8 byte = 1;
+static int pressednow = 0, pressedbefore = 0;
+
 __attribute__ ((interrupt, aligned(64))) void isr(void) {
-	mcauseprint(mcauserd());
-	printword(mtvalrd());
-	printchar('\n');
+	mtimecmpwr(mtimecmprd() + SLEEP);
+	pressedbefore = pressednow;
+	pressednow = !(gpio->input_val&i0)? pressednow+1: 0;
+	int buttonpress = (!pressednow && pressedbefore) |
+			  (pressednow > 6);
+	if (buttonpress) {
+		print("Button pressed!\n");
+		byte = (byte<<1)|(byte>>7);
+		ledbyte(byte);
+	} else
+		printchar('\n');
 }
 
-int pressednow = 0, pressedbefore = 0;
-int main(void) {
-	mtvecwr((u32)isr);               /* set interrupt handler address */
-	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
+void gpioinit(void) {
 	gpio->output_en |= o7|o6|o5|o4|o3|o2|o1|o0;
 	gpio->input_en  |= i0;
 	gpio->pue       |= i0; /* internal pull up resistor enable */
+}
 
-	const int nap = 0x100000;
-	int len = nap;
-	u8 byte = 1;
+void timerinit(void (*isr)(void)) {
+	miewr(mierd() | BIT(7));         /* enable machine timer interrupts */
+	mtimecmpwr(0);                   /* trigger interrupt ASAP */
+	mtvecwr((u32)isr);               /* set interrupt handler address */
+	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
+}
+
+int main(void) {
+	gpioinit();
+	timerinit(isr);
+
 	ledbyte(byte);
-	for (u64 start, end, diff=nap;; diff=end-start) {
-		start = cycle();
-		pressedbefore = pressednow;
-		pressednow = !(gpio->input_val&i0)? pressednow+1: 0;
-		int buttonpress = (!pressednow && pressedbefore) |
-			          (pressednow > 6);
-		if (buttonpress) {
-			print("Button pressed!\n");
-			byte = (byte<<1)|(byte>>7);
-			ledbyte(byte);
-		} else
-			printchar('\n');
-		len -= diff-nap+6 /* diff=end-start takes 6 cycles? */;
-		sleep(len);
-		end = cycle();
-	}
+	for (;;);
 }
