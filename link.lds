@@ -13,9 +13,13 @@ SECTIONS
 		*(.text.raminit)
 		*(.text .text*)
 	} >rom
+	.rodata : { *(.rodata .rodata*) } >rom
 	_raminit = .;
 	. = 0x80000000;
 	_ramstart = .;
-	.data : { *(.sdata*)} >ram AT>rom
+	.data :  { *(.data .data*)   } >ram AT>rom
+	.sdata : { *(.sdata .sdata*) } >ram AT>rom
+	.bss :   { *(.bss .bss*)     } >ram AT>rom
+	.sbss :  { *(.sbss .sbss*)   } >ram AT>rom
 	_ramend = .;
 }
