@@ -76,6 +76,13 @@ void uartinit(void) {
 	uart->txctrl |= 1;
 }
 
+void timerinit(void (*isr)(void)) {
+	miewr(mierd() | BIT(7));         /* enable machine timer interrupts */
+	mtimecmpwr(0);                   /* trigger interrupt ASAP */
+	mtvecwr((u32)isr);               /* set interrupt handler address */
+	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
+}
+
 void printchar(char c) {
 	while (uart->txdata>>31)
 		;

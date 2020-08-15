@@ -27,7 +27,7 @@ void ledbyte(u8 byte) {
 u8 byte = 1;
 static int pressednow = 0, pressedbefore = 0;
 
-__attribute__ ((interrupt, aligned(64))) void isr(void) {
+INTERRUPT(isr) {
 	mtimecmpwr(mtimecmprd() + SLEEP);
 	pressedbefore = pressednow;
 	pressednow = !(gpio->input_val&i0)? pressednow+1: 0;
@@ -45,13 +45,6 @@ void gpioinit(void) {
 	gpio->output_en |= o7|o6|o5|o4|o3|o2|o1|o0;
 	gpio->input_en  |= i0;
 	gpio->pue       |= i0; /* internal pull up resistor enable */
-}
-
-void timerinit(void (*isr)(void)) {
-	miewr(mierd() | BIT(7));         /* enable machine timer interrupts */
-	mtimecmpwr(0);                   /* trigger interrupt ASAP */
-	mtvecwr((u32)isr);               /* set interrupt handler address */
-	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
 }
 
 int main(void) {

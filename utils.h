@@ -11,6 +11,8 @@
 		__asm__ volatile ("csrrw zero," #csr ", %0" : : "r" (v)); \
 	}
 
+#define INTERRUPT(x) __attribute__ ((interrupt, aligned(64))) void x(void)
+
 struct uart {
 	u32 txdata;
 	u32 rxdata;
@@ -99,6 +101,7 @@ enum {
 void *memcpy(void *dest, const void *src, size_t n);
 
 void uartinit(void);
+void timerinit(void (*isr)(void));
 void print(char *s);
 void printword(u32 w);
 void printdword(u64 dw);
