@@ -2,23 +2,13 @@
 
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
-enum { o0=BIT(D9) };
-
-void ledtoggle(void) {
-	gpio->output_val ^= o0;
-}
-
 INTERRUPT(isr) {
 	mtimecmpwr(mtimecmprd() + SLEEP);
-	ledtoggle();
-}
-
-void gpioinit(void) {
-	gpio->output_en |= o0;
+	gpio->output_val ^= BIT(D9);
 }
 
 int main(void) {
-	gpioinit();
+	gpio->output_en |= BIT(D9);
 	timerinit(isr);
 
 	for (;;)
