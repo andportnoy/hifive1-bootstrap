@@ -45,6 +45,9 @@ CSR32WR_DEF(mstatus)
 CSR32RD_DEF(mcause)
 CSR32WR_DEF(mcause)
 
+CSR32RD_DEF(mtval)
+CSR32WR_DEF(mtval)
+
 void sleep(u32 cycles) {
 	u64 cur = cycle();
 	while (cycle()-cur < cycles)
@@ -167,6 +170,18 @@ void mcauseprint(u32 v) {
 		default: print("unknown interrupt type\n"); break;
 		}
 	} else {
-		print("exception\n");
+		print("exception: ");
+		switch (v & 0x3ff) {
+		case  1: print("instruction access fault\n");     break;
+		case  2: print("illegal instruction\n");          break;
+		case  3: print("breakpoint\n");                   break;
+		case  4: print("load address misaligned\n");      break;
+		case  5: print("load access fault\n");            break;
+		case  6: print("store/AMO address misaligned\n"); break;
+		case  7: print("store/AMO access fault\n");       break;
+		case  8: print("environment call from U-mode\n"); break;
+		case 11: print("environment call from M-mode\n"); break;
+		default: print("unknown exception type\n");       break;
+		}
 	}
 }

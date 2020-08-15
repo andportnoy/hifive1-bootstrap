@@ -120,3 +120,5 @@ CSR32RD_DECL(mstatus);
 CSR32WR_DECL(mstatus);
 CSR32RD_DECL(mcause);
 CSR32WR_DECL(mcause);
+CSR32RD_DECL(mtval);
+CSR32WR_DECL(mtval);
