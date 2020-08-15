@@ -8,12 +8,14 @@ MEMORY
 SECTIONS
 {
 	. = 0x20010000;
-	_romstart = .;
 	.text :
 	{
-		*(.text.startup.main .text.startup*)
+		*(.text.startup.raminit .text.startup.main .text.startup*)
 		*(.text .text*)
 	} >rom
+	_raminit = .;
 	. = 0x80000000;
-	.data : { *(.data) } >ram AT>rom
+	_ramstart = .;
+	.data : { *(.sdata*) } >ram AT>rom
+	_ramend = .;
 }
