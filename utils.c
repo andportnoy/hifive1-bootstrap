@@ -94,7 +94,7 @@ void print(char *s) {
 		printchar(*s++);
 }
 
-void prciprint(struct prci *prciptr) {
+void prciprint(struct prci volatile *prciptr) {
 	struct prci val = *prciptr;
 
 	print("ring oscillator:\n");
@@ -168,7 +168,7 @@ void prciprint(struct prci *prciptr) {
 	printchar('\n');
 }
 
-void pwmcfgprint(struct pwm *v) {
+void pwmcfgprint(struct pwm volatile *v) {
 	print("pwmscale: ");
 	printword(v->pwmscale);
 	printchar('\n');
