@@ -55,7 +55,7 @@ void gpioinit(void) {
 	gpio->iof_en   &= ~ECHO;
 	gpio->pue      |= ECHO;
 	gpio->rise_ie  |= ECHO;
-	gpio->fall_ie  |= ECHO;
+	gpio->rise_ip  |= ECHO;
 
 	/* PWM output */
 	gpio->iof_en   |= TRIGGER; /* use it for PWM  */
@@ -64,13 +64,19 @@ void gpioinit(void) {
 
 __attribute__ ((noinline)) INTERRUPT(tisr) {
 	mtimecmpwr(mtimecmprd() + 0x1000);
-	printcycle();
+	print("value: ");
+	printword(gpio->input_val & ECHO);
 	printchar('\n');
+	print("rise:  ");
+	printword(gpio->rise_ip & ECHO);
+	printchar('\n');
+	printchar('\n');
+	gpio->rise_ip &= ECHO;
 }
 
 __attribute__ ((noinline)) INTERRUPT(eisr) {
 	u32 claim = *CLAIMPTR;
-	gpio->rise_ip &= ~ECHO;
+	gpio->rise_ip &= ECHO;
 	print("external interrupt\n");
 	*CLAIMPTR = claim;
 }
