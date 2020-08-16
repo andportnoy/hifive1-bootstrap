@@ -3,3 +3,6 @@
 *.elf
 *.o
 *.lst
+*.swp
+*.swo
+*.swn
