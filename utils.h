@@ -91,6 +91,47 @@ struct prci {
 	u32 procmoncfg;
 };
 
+struct pwm {
+	union {
+	u32 pwmcfg;
+	struct {
+		u32 pwmscale      :4;
+		u32               :4;
+		u32 pwmsticky     :1;
+		u32 pwmzerocmp    :1;
+		u32 pwmdeglitch   :1;
+		u32               :1;
+		u32 pwmenalways   :1;
+		u32 pwmenoneshot  :1;
+		u32               :2;
+		u32 pwmcmp0center :1;
+		u32 pwmcmp1center :1;
+		u32 pwmcmp2center :1;
+		u32 pwmcmp3center :1;
+		u32               :4;
+		u32 pwmcmp0gang   :1;
+		u32 pwmcmp1gang   :1;
+		u32 pwmcmp2gang   :1;
+		u32 pwmcmp3gang   :1;
+		u32 pwmcmp0ip     :1;
+		u32 pwmcmp1ip     :1;
+		u32 pwmcmp2ip     :1;
+		u32 pwmcmp3ip     :1;
+	};
+	};
+	u32 :32;
+	u32 pwmcount;
+	u32 :32;
+	u32 pwms;
+	u32 :32;
+	u32 :32;
+	u32 :32;
+	u32 pwmcmp0;
+	u32 pwmcmp1;
+	u32 pwmcmp2;
+	u32 pwmcmp3;
+};
+
 /* map pins as marked on the board to internal GPIO pin numbers */
 enum {
 	D0=16, D1, D2, D3, GLED=D3, D4, D5, BLED=D5, D6, RLED=D6, D7,
@@ -110,6 +151,7 @@ u64 cycle(void);
 void sleep(u32 cycles);
 void printcycle(void);
 void prciprint(struct prci *prciptr);
+void pwmcfgprint(struct pwm *v);
 void mcauseprint(u32 v);
 u64 mtimerd(void);
 void mtimewr(u64 v);

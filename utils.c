@@ -168,6 +168,80 @@ void prciprint(struct prci *prciptr) {
 	printchar('\n');
 }
 
+void pwmcfgprint(struct pwm *v) {
+	print("pwmscale: ");
+	printword(v->pwmscale);
+	printchar('\n');
+
+	print("pwmsticky: ");
+	printword(v->pwmsticky);
+	printchar('\n');
+
+	print("pwmzerocmp: ");
+	printword(v->pwmzerocmp);
+	printchar('\n');
+
+	print("pwmdeglitch: ");
+	printword(v->pwmdeglitch);
+	printchar('\n');
+
+	print("pwmenalways: ");
+	printword(v->pwmenalways);
+	printchar('\n');
+
+	print("pwmenoneshot: ");
+	printword(v->pwmenoneshot);
+	printchar('\n');
+
+	print("pwmcmp0center: ");
+	printword(v->pwmcmp0center);
+	printchar('\n');
+
+	print("pwmcmp1center: ");
+	printword(v->pwmcmp1center);
+	printchar('\n');
+
+	print("pwmcmp2center: ");
+	printword(v->pwmcmp2center);
+	printchar('\n');
+
+	print("pwmcmp3center: ");
+	printword(v->pwmcmp3center);
+	printchar('\n');
+
+	print("pwmcmp0gang: ");
+	printword(v->pwmcmp0gang);
+	printchar('\n');
+
+	print("pwmcmp1gang: ");
+	printword(v->pwmcmp1gang);
+	printchar('\n');
+
+	print("pwmcmp2gang: ");
+	printword(v->pwmcmp2gang);
+	printchar('\n');
+
+	print("pwmcmp3gang: ");
+	printword(v->pwmcmp3gang);
+	printchar('\n');
+
+	print("pwmcmp0ip: ");
+	printword(v->pwmcmp0ip);
+	printchar('\n');
+
+	print("pwmcmp1ip: ");
+	printword(v->pwmcmp1ip);
+	printchar('\n');
+
+	print("pwmcmp2ip: ");
+	printword(v->pwmcmp2ip);
+	printchar('\n');
+
+	print("pwmcmp3ip: ");
+	printword(v->pwmcmp3ip);
+	printchar('\n');
+}
+
 void mcauseprint(u32 v) {
 	if (v & BIT(31)) {
 		switch (v & 0x3ff) {
