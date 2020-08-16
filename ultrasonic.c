@@ -36,19 +36,39 @@
  * Ok, let's start with a PWM pulse. We can verify it using the builtin LED.
  */
 
+#define TRIGGER BIT(D18)
+#define ECHO    BIT(D19)
+
 struct pwm  volatile *const pwm2 = (void *)PWM2ADDR;
 struct uart volatile *const uart = (void *)UARTADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
 void gpioinit(void) {
-	gpio->iof_en     |= BIT(D18);
-	gpio->iof_sel    |= BIT(D18);
+	/* GPIO input */
+	gpio->input_en |= ECHO;
+	gpio->iof_en   &= ~ECHO;
+	gpio->pue      |= ECHO;
+	gpio->rise_ie  |= ECHO;
+
+	/* PWM output */
+	gpio->iof_en   |= TRIGGER; /* use it for PWM  */
+	gpio->iof_sel  |= TRIGGER; /* PWM */
 }
 
-INTERRUPT(isr) {
+__attribute__ ((noinline)) INTERRUPT(isr) {
 	mtimecmpwr(mtimecmprd() + 0x1000);
-	printword(pwm2->pwmcmp2ip);
+	printcycle();
 	printchar('\n');
+}
+
+void __attribute__ ((naked, aligned(64))) vector(void) {
+	/*
+	 * I tried calling ("j isr") from assembly, but I got
+	 * "undefined reference". Therefore I made isr noinline and am calling
+	 * it directly here. It does compile to single jump instruction.
+	 */
+	__asm__ volatile ( ".skip 0x1c");
+	isr();
 }
 
 void pwminit(struct pwm volatile *pwm) {
@@ -63,7 +83,10 @@ void pwminit(struct pwm volatile *pwm) {
 
 int main(void) {
 	gpioinit();
-	timerinit(isr);
+	miewr(mierd() | BIT(7));         /* enable machine timer interrupts */
+	mtimecmpwr(0);                   /* set first interrupt at 3 seconds */
+	mtvecwr((u32)vector | 1);        /* set interrupt handler address */
+	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
 
 	/* I want a 160 cycle pulse every second.
 	 * So I wait 16e6-160 cycles, then do a pulse for 160 seconds.
@@ -83,7 +106,36 @@ int main(void) {
 	 * 19 digital, yes it does. Which pwm unit is that? 19 dig is GPIO 13,
 	 * which corresponds to PWM2_PWM3. Alrighty. Let's test it with an
 	 * external LED. Actually, I'll use echo for that, I need PWM2_PWM2.
+	 * Ok, it's working. Maybe I'll need an external power supply because
+	 * the voltage regulator is getting hot.
+	 * Now let's try to get an external interrupt to work. We'll test it on
+	 * a button.
+	 *
+	 * + enable GPIO input on that pin
+	 * + enable pull up resistor on that pin
+	 * + enable GPIO interrupt on rising edge
+	 * - place an external interrupt handler at appropriate address
+	 *   - remember to set (clear?) the rise_ip bit
+	 * + set mtvec, enabling vectored mode
+	 * + enable machine external interrupts
+	 * + enable global interrupts
+	 *
+	 * Hmm, ok I need to place a jump instruction to the isr. How to do
+	 * this? I basically want to place a specific piece of assembly code at
+	 * a specific location.
+	 * Actually, I'm overthinking it. I can place the table anywhere, it's
+	 * just the jump needs to be at a specific position in the table.
+	 * So I can just write the table in assembly as a naked function, then
+	 * use the function pointer to set mtvec.
+	 * Let's test this with a timer interrupt.
 	 */
+
+
+#if 0
+	miewr(mierd() | BIT(11));        /* enable machine external interrupts */
+	mtvecwr((u32)isr);               /* enable vectored mode */
+	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
+#endif
 
 	pwminit(pwm2);
 	pwmcfgprint(pwm2);
