@@ -39,6 +39,12 @@
 #define TRIGGER BIT(D18)
 #define ECHO    BIT(D19)
 
+#define SOURCE (8+D19)
+
+#define PRIORITYPTR (u32 volatile *)(0x0c000000 + 4*SOURCE)
+#define ENABLEPTR   ((u32 volatile *)0x0c002000)
+#define CLAIMPTR    ((u32 volatile *)0x0c200004)
+
 struct pwm  volatile *const pwm2 = (void *)PWM2ADDR;
 struct uart volatile *const uart = (void *)UARTADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
@@ -49,16 +55,24 @@ void gpioinit(void) {
 	gpio->iof_en   &= ~ECHO;
 	gpio->pue      |= ECHO;
 	gpio->rise_ie  |= ECHO;
+	gpio->fall_ie  |= ECHO;
 
 	/* PWM output */
 	gpio->iof_en   |= TRIGGER; /* use it for PWM  */
 	gpio->iof_sel  |= TRIGGER; /* PWM */
 }
 
-__attribute__ ((noinline)) INTERRUPT(isr) {
+__attribute__ ((noinline)) INTERRUPT(tisr) {
 	mtimecmpwr(mtimecmprd() + 0x1000);
 	printcycle();
 	printchar('\n');
+}
+
+__attribute__ ((noinline)) INTERRUPT(eisr) {
+	u32 claim = *CLAIMPTR;
+	gpio->rise_ip &= ~ECHO;
+	print("external interrupt\n");
+	*CLAIMPTR = claim;
 }
 
 void __attribute__ ((naked, aligned(64))) vector(void) {
@@ -68,7 +82,9 @@ void __attribute__ ((naked, aligned(64))) vector(void) {
 	 * it directly here. It does compile to single jump instruction.
 	 */
 	__asm__ volatile ( ".skip 0x1c");
-	isr();
+	tisr();
+	__asm__ volatile ( ".skip 0xc");
+	eisr();
 }
 
 void pwminit(struct pwm volatile *pwm) {
@@ -83,10 +99,22 @@ void pwminit(struct pwm volatile *pwm) {
 
 int main(void) {
 	gpioinit();
-	miewr(mierd() | BIT(7));         /* enable machine timer interrupts */
-	mtimecmpwr(0);                   /* set first interrupt at 3 seconds */
-	mtvecwr((u32)vector | 1);        /* set interrupt handler address */
-	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
+
+	pwminit(pwm2);
+	pwmcfgprint(pwm2);
+
+	*PRIORITYPTR = 7;
+	*ENABLEPTR |= BIT(SOURCE);
+
+	miewr(mierd() | BIT(7) | BIT(11)); /* enable machine timer interrupts */
+	mtimecmpwr(0);                     /* set first interrupt at 3 seconds */
+	mtvecwr((u32)vector | 1);          /* set interrupt handler address */
+	mstatuswr(mstatusrd() | BIT(3));   /* global interrupt enable */
+
+	printword((u32)vector);
+	printchar('\n');
+	printword(mtvecrd());
+	printchar('\n');
 
 	/* I want a 160 cycle pulse every second.
 	 * So I wait 16e6-160 cycles, then do a pulse for 160 seconds.
@@ -120,6 +148,14 @@ int main(void) {
 	 * + enable machine external interrupts
 	 * + enable global interrupts
 	 *
+	 * Apparently I need to configure PLIC too.
+	 * + set the priority to a nonzero value for source 21 (GPIO 13/DIG 19)
+	 * + set bit 21 in the interrupt enable register
+	 * - in the interrupt handler:
+	 *   - read claim register in the beginning
+	 *   - write same value to claim register at the end of the routine
+	 *   - does the gpio interrupt pending bit also need to be cleared/set?
+	 *
 	 * Hmm, ok I need to place a jump instruction to the isr. How to do
 	 * this? I basically want to place a specific piece of assembly code at
 	 * a specific location.
@@ -129,14 +165,4 @@ int main(void) {
 	 * use the function pointer to set mtvec.
 	 * Let's test this with a timer interrupt.
 	 */
-
-
-#if 0
-	miewr(mierd() | BIT(11));        /* enable machine external interrupts */
-	mtvecwr((u32)isr);               /* enable vectored mode */
-	mstatuswr(mstatusrd() | BIT(3)); /* global interrupt enable */
-#endif
-
-	pwminit(pwm2);
-	pwmcfgprint(pwm2);
 }
