@@ -53,31 +53,38 @@ void gpioinit(void) {
 	/* GPIO input */
 	gpio->input_en |= ECHO;
 	gpio->iof_en   &= ~ECHO;
-	gpio->pue      |= ECHO;
+
 	gpio->rise_ie  |= ECHO;
 	gpio->rise_ip  |= ECHO;
+	gpio->fall_ie  |= ECHO;
+	gpio->fall_ip  |= ECHO;
 
 	/* PWM output */
 	gpio->iof_en   |= TRIGGER; /* use it for PWM  */
 	gpio->iof_sel  |= TRIGGER; /* PWM */
 }
 
+u64 delta = 0;
 __attribute__ ((noinline)) INTERRUPT(tisr) {
-	mtimecmpwr(mtimecmprd() + 0x1000);
-	print("value: ");
-	printword(gpio->input_val & ECHO);
-	printchar('\n');
-	print("rise:  ");
-	printword(gpio->rise_ip & ECHO);
-	printchar('\n');
-	printchar('\n');
-	gpio->rise_ip &= ECHO;
+	mtimecmpwr(mtimecmprd() + 0x400);
+	if (delta) {
+		printdword(delta);
+		printchar('\n');
+		delta = 0;
+	}
 }
 
+u64 start = 0;
 __attribute__ ((noinline)) INTERRUPT(eisr) {
 	u32 claim = *CLAIMPTR;
-	gpio->rise_ip &= ECHO;
-	print("external interrupt\n");
+	if (gpio->rise_ip & ECHO) {
+		start = cycle();
+		gpio->rise_ip |= ECHO;
+	}
+	if (gpio->fall_ip & ECHO) {
+		delta = cycle() - start;
+		gpio->fall_ip |= ECHO;
+	}
 	*CLAIMPTR = claim;
 }
 
@@ -110,18 +117,21 @@ int main(void) {
 	pwmcfgprint(pwm2);
 
 	*PRIORITYPTR = 7;
+	*ENABLEPTR = 0;
+	*(ENABLEPTR+1) = 0;
 	*ENABLEPTR |= BIT(SOURCE);
+
+	printword(*ENABLEPTR);
+	printchar('\n');
+	printword(*(ENABLEPTR+1));
+	printchar('\n');
 
 	miewr(mierd() | BIT(7) | BIT(11)); /* enable machine timer interrupts */
 	mtimecmpwr(0);                     /* set first interrupt at 3 seconds */
 	mtvecwr((u32)vector | 1);          /* set interrupt handler address */
 	mstatuswr(mstatusrd() | BIT(3));   /* global interrupt enable */
 
-	printword((u32)vector);
-	printchar('\n');
-	printword(mtvecrd());
-	printchar('\n');
-
+	start = 0;
 	/* I want a 160 cycle pulse every second.
 	 * So I wait 16e6-160 cycles, then do a pulse for 160 seconds.
 	 * I could scale this to take 160 cycles as a unit. So the scale value
