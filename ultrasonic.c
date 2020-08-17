@@ -53,7 +53,6 @@ void gpioinit(void) {
 	/* GPIO input */
 	gpio->input_en |= ECHO;
 	gpio->iof_en   &= ~ECHO;
-
 	gpio->rise_ie  |= ECHO;
 	gpio->rise_ip  |= ECHO;
 	gpio->fall_ie  |= ECHO;
@@ -116,69 +115,14 @@ int main(void) {
 	pwminit(pwm2);
 	pwmcfgprint(pwm2);
 
+	/* this needs clean up */
 	*PRIORITYPTR = 7;
 	*ENABLEPTR = 0;
 	*(ENABLEPTR+1) = 0;
 	*ENABLEPTR |= BIT(SOURCE);
 
-	printword(*ENABLEPTR);
-	printchar('\n');
-	printword(*(ENABLEPTR+1));
-	printchar('\n');
-
-	miewr(mierd() | BIT(7) | BIT(11)); /* enable machine timer interrupts */
-	mtimecmpwr(0);                     /* set first interrupt at 3 seconds */
-	mtvecwr((u32)vector | 1);          /* set interrupt handler address */
+	miewr(mierd() | BIT(7) | BIT(11)); /* enable timer + external */
+	mtimecmpwr(0);                     /* run timer interrupt ASAP */
+	mtvecwr((u32)vector | 1);          /* vectored mode */
 	mstatuswr(mstatusrd() | BIT(3));   /* global interrupt enable */
-
-	start = 0;
-	/* I want a 160 cycle pulse every second.
-	 * So I wait 16e6-160 cycles, then do a pulse for 160 seconds.
-	 * I could scale this to take 160 cycles as a unit. So the scale value
-	 * would be 0xa0. A second is how many of these? 1e5=100000, I think.
-	 * So I need to wait for 99999 units, then go live for 1. Is that
-	 * possible? Nope, I can wait for a maximum of 65535 units, unless I do
-	 * some extra tricks. Ok, that's fine, let's do a pulse every half a
-	 * second. So I need 50k units.
-	 * I think the scale is powers of two, not literal scale. So the best I
-	 * can do probably is scale=5, because then 160/2^5 = 5. So my pulse
-	 * lasts 5 cycles. Ok, let's do that.
-	 * 32 * 50000 is 16*100000=16e5, so 0.1 second. So I'l have to do a
-	 * pulse once every 1/10th of a second. Ok, that's fine. Maybe too
-	 * frequent for debugging purposes.
-	 * Yeah, it's blinking. So that works fine. Does my pin support PWM?
-	 * 19 digital, yes it does. Which pwm unit is that? 19 dig is GPIO 13,
-	 * which corresponds to PWM2_PWM3. Alrighty. Let's test it with an
-	 * external LED. Actually, I'll use echo for that, I need PWM2_PWM2.
-	 * Ok, it's working. Maybe I'll need an external power supply because
-	 * the voltage regulator is getting hot.
-	 * Now let's try to get an external interrupt to work. We'll test it on
-	 * a button.
-	 *
-	 * + enable GPIO input on that pin
-	 * + enable pull up resistor on that pin
-	 * + enable GPIO interrupt on rising edge
-	 * - place an external interrupt handler at appropriate address
-	 *   - remember to set (clear?) the rise_ip bit
-	 * + set mtvec, enabling vectored mode
-	 * + enable machine external interrupts
-	 * + enable global interrupts
-	 *
-	 * Apparently I need to configure PLIC too.
-	 * + set the priority to a nonzero value for source 21 (GPIO 13/DIG 19)
-	 * + set bit 21 in the interrupt enable register
-	 * - in the interrupt handler:
-	 *   - read claim register in the beginning
-	 *   - write same value to claim register at the end of the routine
-	 *   - does the gpio interrupt pending bit also need to be cleared/set?
-	 *
-	 * Hmm, ok I need to place a jump instruction to the isr. How to do
-	 * this? I basically want to place a specific piece of assembly code at
-	 * a specific location.
-	 * Actually, I'm overthinking it. I can place the table anywhere, it's
-	 * just the jump needs to be at a specific position in the table.
-	 * So I can just write the table in assembly as a naked function, then
-	 * use the function pointer to set mtvec.
-	 * Let's test this with a timer interrupt.
-	 */
 }
