@@ -42,9 +42,9 @@
 #define SOURCE (8+D19)
 
 #define PRIORITYPTR (u32 volatile *)(0x0c000000 + 4*SOURCE)
-#define ENABLEPTR   ((u32 volatile *)0x0c002000)
+#define ENABLEPTR   ((u64 volatile *)0x0c002000)
 #define CLAIMPTR    ((u32 volatile *)0x0c200004)
-#define PENDINGPTR  ((u32 volatile *)0x0c001000)
+#define THRESHPTR   ((u32 volatile *)0x0c200000)
 
 struct pwm  volatile *const pwm2 = (void *)PWM2ADDR;
 struct uart volatile *const uart = (void *)UARTADDR;
@@ -56,9 +56,7 @@ void gpioinit(void) {
 	gpio->pue      |= ECHO;
 	gpio->iof_en   &= ~ECHO;
 	gpio->rise_ie  |= ECHO;
-	gpio->rise_ip  |= ECHO;
 	gpio->fall_ie  |= ECHO;
-	gpio->fall_ip  |= ECHO;
 
 	/* PWM output */
 	gpio->iof_en   |= TRIGGER; /* use it for PWM  */
@@ -68,19 +66,6 @@ void gpioinit(void) {
 u64 delta = 0;
 __attribute__ ((noinline)) INTERRUPT(tisr) {
 	mtimecmpwr(mtimecmprd() + 0x4000);
-	printword(gpio->input_val);
-	printchar('\n');
-	printword(gpio->rise_ip);
-	printchar('\n');
-	printword(gpio->fall_ip);
-	printchar('\n');
-	print("pending: ");
-	printword(*PENDINGPTR);
-	printchar('\n');
-	print("claim:   ");
-	printword(*CLAIMPTR);
-	printchar('\n');
-	printchar('\n');
 	if (delta) {
 		printdword(delta);
 		printchar('\n');
@@ -89,8 +74,8 @@ __attribute__ ((noinline)) INTERRUPT(tisr) {
 }
 
 u64 start = 0;
+u32 count = 0;
 __attribute__ ((noinline)) INTERRUPT(eisr) {
-	print("external\n");
 	u32 claim = *CLAIMPTR;
 	if (gpio->rise_ip & ECHO) {
 		start = cycle();
@@ -125,93 +110,22 @@ void pwminit(struct pwm volatile *pwm) {
 	pwm->pwmsticky = 0;       /* let the signal deassert */
 }
 
-/*
- * + enable GPIO input on that pin
- * + enable GPIO interrupt on rising AND falling edge
- * - place an external interrupt handler at appropriate address
- *   - remember to set (clear?) the rise_ip bit
- * + set mtvec, enabling vectored mode
- * + enable machine external interrupts
- * + enable global interrupts
- *
- * Apparently I need to configure PLIC too.
- * + set the priority to a nonzero value for source 21 (GPIO 13/DIG 19)
- * + set bit 21 in the interrupt enable register
- * - in the interrupt handler:
- *   - read claim register in the beginning
- *   - write same value to claim register at the end of the routine
- *   - does the gpio interrupt pending bit also need to be cleared/set?
- *
- * I think I'm seeing that the hardware interrupt is not getting triggered.
- * Let's go through a systematic check for what's causing the issue.
- */
 int main(void) {
 	gpioinit();
-
 	pwminit(pwm2);
-	/* pwmcfgprint(pwm2); */
 
 	/* this needs clean up */
 	*PRIORITYPTR = 7;
-	*ENABLEPTR = 0;
-	*(ENABLEPTR+1) = 0;
-	*ENABLEPTR |= BIT(SOURCE);
+	*ENABLEPTR = BIT(SOURCE);
+	*THRESHPTR = 0;
+
+	/* Why are these initialized to ~0 otherwise? */
+	start = 0;
+	delta = 0;
 
 	miewr(mierd() | BIT(7) | BIT(11)); /* enable timer + external */
 	mtimecmpwr(0);                     /* run timer interrupt ASAP */
 	mtvecwr((u32)vector | 1);          /* vectored mode */
-
-	/* is gpio input enabled only on the ECHO pin? */
-	print("GPIO input: ");
-	printword(gpio->input_en == (gpio->input_en & ECHO));
-	printchar('\n');
-
-	/* are hardware functions disabled on the ECHO pin? want to use GPIO */
-	print("IOF en:     ");
-	printword(!(gpio->iof_en & ECHO));
-	printchar('\n');
-
-	/* is interrupt on rising edge only enabled for ECHO? */
-	print("rise_en:    ");
-	printword(gpio->rise_ie == (gpio->rise_ie & ECHO));
-	printchar('\n');
-
-	/* is interrupt on falling edge only enabled for ECHO? */
-	print("fall_en:    ");
-	printword(gpio->fall_ie == (gpio->fall_ie & ECHO));
-	printchar('\n');
-
-	/* are external interrupts enabled? */
-	print("MEIE:       ");
-	printword(!!(mierd() & BIT(11)));
-	printchar('\n');
-
-	/* is mtvec set to right address and vectored mode? */
-	print("mtvec:      ");
-	printword(mtvecrd() == ((u32)vector | 1));
-	printchar('\n');
-
-	/* is the external interrupt set at the right address? */
-	print("vector table:\n");
-	u32 addr = (mtvecrd() & 0xfffffffc);
-	for (int i=0; i<12; ++i) {
-		printword(addr+i);
-		print(": ");
-		printword(*((u32 *)addr+i));
-		printchar('\n');
-	}
-
-	/* external interrupt priority */
-	print("priority:     ");
-	printword(*((u32 *)0x0c000000 + 8 + D19));
-	printchar('\n');
-
-	/* is the interrupt enabled and only that interrupt? */
-	print("enable:       ");
-	u64 enable = *((u64 *)0x0c002000);
-	printword(enable == (enable & BIT(8+D19)));
-	printchar('\n');
-
 	mstatuswr(mstatusrd() | BIT(3));   /* global interrupt enable */
 
 	for (;;)
