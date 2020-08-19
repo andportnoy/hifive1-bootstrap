@@ -22,7 +22,7 @@ ledcycle: utils.o raminit.o
 timer: utils.o raminit.o
 test: utils.o raminit.o
 pwm: utils.o raminit.o
-ultrasonic: utils.o raminit.o
+ultrasonic-interrupts: utils.o raminit.o
 
 upload: $(T).hex
 	FULLPATH=$(realpath $<); \
