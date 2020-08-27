@@ -197,3 +197,39 @@ I was messing with a linker script to ensure that static global variables are
 placed in memory instead of flash.
 Ok, I got it to work by following instructions from
 http://bravegnu.org/gnu-eprog/data-in-ram.html.
+
+---
+What's up with GPIO0? It seems to interfere with JTAG upload. I get errors like
+these:
+```
+Connecting to target via JTAG                                                                  
+ConfigTargetSettings() start                 
+ConfigTargetSettings() end    
+TotalIRLen = 4, IRPrint = 0x01                                                                 
+JTAG chain detection found 1 devices:                                                          
+ #0 Id: 0x00000001, IRLen: 04, Unknown device                                                  
+RISC-V behind DAP detected                                                                     
+DAP error while determining CoreSight SoC version
+ConfigTargetSettings() start                                                                   
+ConfigTargetSettings() end                                                                     
+TotalIRLen = 4, IRPrint = 0x01             
+JTAG chain detection found 1 devices:                                                          
+ #0 Id: 0x00000001, IRLen: 04, Unknown device                                                  
+RISC-V behind DAP detected                                                                     
+DAP error while determining CoreSight SoC version
+ConfigTargetSettings() start       
+ConfigTargetSettings() end                                                                     
+TotalIRLen = 4, IRPrint = 0x01              
+JTAG chain detection found 1 devices:        
+ #0 Id: 0x00000001, IRLen: 04, Unknown device                                                  
+RISC-V behind DAP detected                                                                     
+DAP error while determining CoreSight SoC version
+ConfigTargetSettings() start                   
+ConfigTargetSettings() end    
+TotalIRLen = 4, IRPrint = 0x01       
+JTAG chain detection found 1 devices:        
+ #0 Id: 0x00000001, IRLen: 04, Unknown device
+RISC-V behind DAP detected                                                                     
+DAP error while determining CoreSight SoC version
+Cannot connect to target.
+```
