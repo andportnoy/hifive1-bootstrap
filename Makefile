@@ -1,4 +1,4 @@
-ARCH=rv32i
+ARCH=rv32imac
 
 CC=riscv64-unknown-elf-gcc
 AS=riscv64-unknown-elf-as

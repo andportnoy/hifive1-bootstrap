@@ -32,19 +32,29 @@ void lcdbyte(char c) {
 		            (c&BIT(7)? d7: 0);
 }
 
-u16 read(void) {
-	u32 outen = gpio->output_en;
-	u32 inen = gpio->input_en;
+void lcdprint(char *s) {
+	while (*s) {
+		lcdbyte(*s++);
+		pulse();
+		sleep(16e4);
+	}
+}
 
-	gpio->output_en = 0;
-	gpio->input_en = MASK;
+char *asciidec(u32 val, char *buf, int n) {
+	buf[--n] = 0;
+	do {
+		buf[--n] = '0'+val%10;
+		val /= 10;
+	} while (val);
+	return &buf[n];
+}
 
-	u32 inval = gpio->input_val;
-
-	gpio->output_en = outen;
-	gpio->input_en = inen;
-
-	return inval;
+void lcdclear(void) {
+	u32 val = gpio->output_val;
+	gpio->output_val &= ~rs;
+	lcdbyte(1);
+	pulse();
+	gpio->output_val = val;
 }
 
 int main(void) {
@@ -59,7 +69,8 @@ int main(void) {
 	pulse();
 	sleep(16e5);
 
-	lcdbyte(0x0f);
+	/* screen on, no cursor, no cursor position */
+	lcdbyte(0x0c);
 	pulse();
 	sleep(16e5);
 
@@ -68,26 +79,14 @@ int main(void) {
 	sleep(16e5);
 
 	gpio->output_val = rs;
-	sleep(16e4);
-	lcdbyte('h');
-	pulse();
-	sleep(16e4);
-	lcdbyte('e');
-	pulse();
-	sleep(16e4);
-	lcdbyte('l');
-	pulse();
-	sleep(16e4);
-	lcdbyte('l');
-	pulse();
-	sleep(16e4);
-	lcdbyte('o');
-	pulse();
-	sleep(16e4);
+	lcdprint("hello");
+	sleep(16e6);
 
-
-	for (;;) {
-		print("alive\n");
-		sleep(16e6);
+	char buf[16] = {0};
+	for (int i=0; i<1000; ++i) {
+		lcdclear();
+		sleep(16e4);
+		lcdprint(asciidec(i, buf, sizeof buf));
+		sleep(8e6);
 	}
 }
