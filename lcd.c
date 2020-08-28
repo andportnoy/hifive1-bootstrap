@@ -36,7 +36,7 @@ void lcdprint(char *s) {
 	while (*s) {
 		lcdbyte(*s++);
 		pulse();
-		sleep(16e4);
+		sleep(16e3);
 	}
 }
 
@@ -57,6 +57,25 @@ void lcdclear(void) {
 	gpio->output_val = val;
 }
 
+void lcdinit(void) {
+	lcdbyte(0x38);
+	pulse();
+	sleep(16e4);
+
+	/* screen on, no cursor, no cursor position */
+	lcdbyte(0x0c);
+	pulse();
+	sleep(16e4);
+
+	lcdbyte(0x01);
+	pulse();
+	sleep(16e4);
+
+	/* data mode */
+	gpio->output_val = rs;
+	sleep(16e4);
+}
+
 int main(void) {
 	/* give the lcd some time */
 	sleep(16e5);
@@ -65,20 +84,8 @@ int main(void) {
 	gpio->output_en = MASK;
 	gpio->output_val = 0;
 
-	lcdbyte(0x38);
-	pulse();
-	sleep(16e5);
+	lcdinit();
 
-	/* screen on, no cursor, no cursor position */
-	lcdbyte(0x0c);
-	pulse();
-	sleep(16e5);
-
-	lcdbyte(0x01);
-	pulse();
-	sleep(16e5);
-
-	gpio->output_val = rs;
 	lcdprint("hello");
 	sleep(16e6);
 
