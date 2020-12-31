@@ -13,10 +13,12 @@ CFLAGS+=-Wall -Wextra -pedantic -std=c11
 ASFLAGS=-march=$(ARCH) -mabi=ilp32
 LDFLAGS=-T link.lds -Wl,--gc-sections
 
-T ?= clock
+T ?= i2c
 
 all: $(T).hex
 
+i2c: utils.o raminit.o
+hello: utils.o raminit.o
 clock: utils.o raminit.o
 ledcycle: utils.o raminit.o
 timer: utils.o raminit.o

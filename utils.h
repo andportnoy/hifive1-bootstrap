@@ -132,6 +132,20 @@ struct pwm {
 	u32 pwmcmp3;
 };
 
+struct i2c {
+	u32 prerlo;
+	u32 prerhi;
+	u32 ctr;
+	union {
+	u32 txr;
+	u32 rxr;
+	};
+	union {
+	u32 cr;
+	u32 sr;
+	};
+};
+
 /* map pins as marked on the board to internal GPIO pin numbers */
 enum {
 	D0=16, D1, D2, D3, GLED=D3, D4, D5, BLED=D5, D6, RLED=D6, D7,
@@ -152,6 +166,7 @@ void sleep(u32 cycles);
 void printcycle(void);
 void prciprint(struct prci volatile *prciptr);
 void pwmcfgprint(struct pwm volatile *v);
+void i2cprint(struct i2c volatile *v);
 void mcauseprint(u32 v);
 u64 mtimerd(void);
 void mtimewr(u64 v);

@@ -242,6 +242,28 @@ void pwmcfgprint(struct pwm volatile *v) {
 	printchar('\n');
 }
 
+void i2cprint(struct i2c volatile *v) {
+	print("prerlo: ");
+	printword(v->prerlo);
+	printchar('\n');
+
+	print("prerhi: ");
+	printword(v->prerhi);
+	printchar('\n');
+
+	print("ctr: ");
+	printword(v->ctr);
+	printchar('\n');
+
+	print("rxr: ");
+	printword(v->rxr);
+	printchar('\n');
+
+	print("sr: ");
+	printword(v->sr);
+	printchar('\n');
+}
+
 void mcauseprint(u32 v) {
 	if (v & BIT(31)) {
 		switch (v & 0x3ff) {
