@@ -3,7 +3,16 @@ struct i2c  volatile *const i2c  = (void *)I2CADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 struct prci volatile *const prci = (void *)PRCIADDR;
 
-enum { STA=BIT(7), STO=BIT(6), RD=BIT(5), WR=BIT(4), ACK=BIT(3) };
+enum { STA=BIT(7), STO=BIT(6), RD=BIT(5), WR=BIT(4), };
+
+void i2cstatusprint(u8 sr) {
+	print(sr&BIT(7)? "NACK": "ACK");
+	print(sr&BIT(6)? " BUSY": " FREE");
+	print(sr&BIT(5)? " ARB_LOST": " ARB_OK");
+	print(sr&BIT(1)? " TIP_PEND": " TIP_DONE");
+	print(sr&BIT(0)? " INT_PEND": " INT_DONE");
+	printchar('\n');
+}
 
 int main(void) {
 	gpio->iof_en  |=   BIT(12)|BIT(13);  /* enable HW function */
@@ -32,16 +41,30 @@ int main(void) {
 	i2c->ctr = BIT(7);
 	sleep(16e5);
 	i2cprint(i2c);
-	sleep(16e5);
+
+#define START() (i2c->cr = STA | WR)
+#define STOP() (i2c->cr = STO)
+#define TIP   (i2c->sr&BIT(1))
+#define NACK  (i2c->sr&BIT(7))
+#define PUT_ADDR_WR(x) (i2c->txr = (x<<1))
+#define PUT_ADDR_RD(x) (i2c->txr = ((x<<1)|1))
+#define PUT(x)  (i2c->txr = x)
+#define GET()   (i2c->rxr)
+#define WRITE() (i2c->cr = WR)
+#define READ()  (i2c->cr = RD)
+
+	sleep(16e6);
+	i2cstatusprint(i2c->sr);
 
 	/* generate a START signal, writing to slave */
-	i2c->txr = (0x28<<1)|0;
-	i2c->cr = BIT(7) | BIT(4);
+	PUT_ADDR_WR(0x28);
+	START();
+	while (TIP);
+	if (NACK) print("NACK\n");
 
-	/* wait for transfer to complete */
-	while (i2c->sr&BIT(1))
+	STOP();
+	while (TIP)
 		;
-
-	print(i2c->sr&BIT(7)? "NACK\n": "ACK\n");
-	i2c->cr = BIT(6);
+	if (NACK) print("NACK\n");
+	i2cstatusprint(i2c->sr);
 }

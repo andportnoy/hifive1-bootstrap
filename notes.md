@@ -233,3 +233,151 @@ RISC-V behind DAP detected
 DAP error while determining CoreSight SoC version
 Cannot connect to target.
 ```
+
+---
+I'm trying to figure out the protocol X that is built on top of SPI and used to
+run AT commands on the Espressif. The ultimate goal is to use Bluetooth.
+Ok, what SPI instance is used? What are the pin numbers for
+- clock       -> GPIO5 aka DIG13
+- MOSI        -> GPIO3 aka DIG11
+- MISO        -> GPIO4 aka DIG12
+- chip select -> GPIO9 aka DIG15
+
+there's also some handshake pin:
+- handshake   -> GPIO10 aka DIG16
+
+I want to probe these using a logic analyzer and try to reverse engineer
+protocol X.
+Setup:
+- hookup the wires to the logic analyzer probes
+- run a simple empty program
+
+I saved a log in esp32-spi-log.txt.
+
+---
+Actually I'll postpone communication for later. Working with the
+gyro/accelerometer is more critical to the project.
+Would be cool to start interfacing with it. I also need to figure out the math.
+I want to estimate position using data from gyro + accelerometer.
+Maybe for starters I can test a stationary sonar in 2D. So map angle (direction)
+to a length.
+Looks like the module I have uses I2C for communication.
+
+2020-10-12
+Ok, the current goal is to understand what data I get from the accelerometer
+and the gyroscope and design an algorithm that converts timestamped
+measurements to position history.
+I found an official datasheet for MPU-6050 from InvenSense at this link:
+https://www.cdiweb.com/datasheets/invensense/mpu-6050_datasheet_v3%204.pdf.
+Apparently it uses I2C. Let's maybe read about the protocol?
+I'm reading Elecia White:
+- SCL is the clock
+- SDA is data
+
+Now what the heck are those other pins:
+- XDA,
+- XCL,
+- ADO,
+- INT?
+
+Ok, right now I just want to find out what the data looks like and work on the
+algorithm. Let's not worry so much about interfacing.
+Holy crap, the datasheet mentions motion processing and sensor fusion.
+
+Also a reminder, I saw that compass and altimeter/barometer are also very
+useful for sensor fusion. Should probably look into getting those.  Hmm, turns
+out MPU 9250 has those integrated. I also found some Adafruit absolute
+orientation board that apparently can spit out orientation or position...  If
+it can do that, then my problem is solved for me. Would it be fun to implement
+from scratch?
+Well, it seems like this integrated sensor can only provide orientation, not
+position. In addition, it can only output linear acceleration at 100Hz max. I
+think the higher the frequency at which I poll, the less error I get. I wonder
+how often I can poll both the ultrasonic sensor and the gyro/accelerometer?
+Maybe I can poll the ultrasonic sensor less often than the MPU. Or if I run the
+clock at 320 Mhz, I can do a lot of work in between, and so timing should be
+less of an issue.
+Ok, let's just read the datasheet for the simpler MPU and see how often it can
+provide data.
+I also would like to understand what exactly is the source of drift. If I could simulate the process... And visualize.
+
+Ok, looks like the extra pins are to allow communication with an external compass, or other sensors.
+
+Alright, I can either start working out the algorithm or try to interface with
+the thing.
+
+
+# Wed Dec 30 04:08:51 PM PST 2020
+Alrighty, let's try to bring up the BNO 055. I just want communication to work
+and to be able to print stuff to serial.
+
+## BNO 055
+### Pinout
+- Vin: 3.3-5.0 V
+- GND
+- (I2C) SCL
+- (I2C) SDA
+
+Now how does I2C work on my board? The core is some opensource implementation
+which I should try to find and understand. Otherwise the address of the instance
+is at.
+
+### I2C
+1. Master creates start condition on the 2 lines.
+2. Master sends 7 address bits and R/W bit, MSB first.
+3. Slave pulls SDA down to acknowledge it's listening.
+4. Suppose master is writing, then master sends 8 bits of data.
+5. Slave pulls SDA down to ACK.
+6. Master creates stop condition.
+
+#### General I2C flow specifics
+1. Start signal
+	- STA bit in the command register set
+	- the RD or WR bits set
+2. slave address transfer
+	- store the slave device's address in the transmit register
+	- set the WR bit
+3. data transfer
+	- store data in the transmit register
+	- set wr
+	- check TIP which indicates transfer in progress when set
+	- check IF which indicates receive register contains valid data when set
+	- can issue new write/read when TIP reset
+4. Stop signal
+	hmmm
+
+#### Questions
+- given 400 kHz, what should the prescaler equal?
+
+#### BNO 055 I2C specifics
+- clock:   400 kHz
+- address: 0x29
+
+
+#### Trial run
+Ok, want to read some data from the device. The sequence is that we first send
+the register address, then read the data.
+
+1. Write slave address to TXR (shifted) ORed with 1, set STA and WR.
+2. Wait for TIP and check ACK.
+3. Write register address to TXR, set WR.
+4. Wait for TIP and check ACK.
+5. Write slave address to TXR (shifted) ORed with 0, set STA and RD.
+6. Wait for TIP and check ACK.
+7. Set the RD bit.
+8. Wait for TIP and IF.
+9. Read RXR.
+10. Repeat 7-9 if necessary.
+11. Send NACK.
+12. Generate STOP by setting STO.
+
+
+Alright, I just managed to get BNO 055 to ACK.
+First, I had connectivity issues on the breadboard, so I had to solder the
+headers.
+Then I used the Arduino I had to verify that the device works correctly.
+
+Can I just send a START reliably?
+Develop a way to determine who is responsible for either line being down and how
+it can be fixed.
+Look at the communication pattern between Arduino and BNO 055.
