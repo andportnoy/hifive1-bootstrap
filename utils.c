@@ -1,4 +1,4 @@
-extern struct uart volatile *const uart;
+extern struct uart volatile *const uart0;
 
 void *memcpy(void *dest, const void *src, size_t n) {
 	u8 *d = dest;
@@ -73,7 +73,7 @@ void printcycle(void) {
 }
 
 void uartinit(void) {
-	uart->txctrl |= 1;
+	uart0->txctrl |= 1;
 }
 
 void timerinit(void (*isr)(void)) {
@@ -84,9 +84,9 @@ void timerinit(void (*isr)(void)) {
 }
 
 void printchar(char c) {
-	while (uart->txdata>>31)
+	while (uart0->txdata>>31)
 		;
-	uart->txdata = c;
+	uart0->txdata = c;
 }
 
 void print(char *s) {

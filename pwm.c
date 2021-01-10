@@ -2,7 +2,7 @@
 #define SCALE 0xff
 
 struct pwm  volatile *const pwm1 = (void *)PWM1ADDR;
-struct uart volatile *const uart = (void *)UARTADDR;
+struct uart volatile *const uart = (void *)UART0ADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
 void intensity(u8 value) {

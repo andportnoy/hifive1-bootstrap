@@ -1,7 +1,7 @@
-struct uart volatile *const uart = (void *)UARTADDR;
-struct i2c  volatile *const i2c  = (void *)I2CADDR;
-struct gpio volatile *const gpio = (void *)GPIOADDR;
-struct prci volatile *const prci = (void *)PRCIADDR;
+struct uart volatile *const uart0 = (void *)UART0ADDR;
+struct i2c  volatile *const i2c   = (void *)I2CADDR;
+struct gpio volatile *const gpio  = (void *)GPIOADDR;
+struct prci volatile *const prci  = (void *)PRCIADDR;
 
 enum { STA=BIT(7), STO=BIT(6), RD=BIT(5), WR=BIT(4), };
 

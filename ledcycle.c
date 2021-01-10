@@ -1,6 +1,6 @@
 #define SLEEP (0x8000 / 20) /* every 50 milliseconds */
 
-struct uart volatile *const uart = (void *)UARTADDR;
+struct uart volatile *const uart = (void *)UART0ADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
 enum {

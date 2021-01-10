@@ -1,4 +1,4 @@
-struct uart volatile *const uart = (void *)UARTADDR;
+struct uart volatile *const uart = (void *)UART0ADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
 enum {

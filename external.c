@@ -14,7 +14,7 @@
 #define CLAIMPTR    ((u32 volatile *)0x0c200004)
 #define PENDINGPTR  ((u32 volatile *)0x0c001000)
 
-struct uart volatile *const uart = (void *)UARTADDR;
+struct uart volatile *const uart = (void *)UART0ADDR;
 struct gpio volatile *const gpio = (void *)GPIOADDR;
 
 void gpioinit(void) {
