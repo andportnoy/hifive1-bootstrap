@@ -17,6 +17,7 @@ T ?= i2c
 
 all: $(T).hex
 
+uart1: utils.o raminit.o
 i2c: utils.o raminit.o
 hello: utils.o raminit.o
 clock: utils.o raminit.o
