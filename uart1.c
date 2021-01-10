@@ -7,6 +7,7 @@ struct gpio volatile *const gpio  = (void *)GPIOADDR;
 #define TXFULL  (1<<31)
 #define RXEMPTY (1<<31)
 
+#define REG_CALIB_STAT  0x35
 #define REG_ST_RESULT   0x36
 #define REG_SYS_ERR     0x3a
 #define REG_OPR_MODE    0x3d
@@ -180,6 +181,19 @@ int bistcheck(void) {
 	return sys_err;
 }
 
+u8 calibstat(void) {
+	u8 stat;
+	CHECK(bnoread(REG_CALIB_STAT, &stat, sizeof stat));
+	return stat;
+}
+
+void printcalibstat(u8 stat) {
+	print("SYS: "); printchar('0' + ((stat>>(3*2))&3)); printchar(' ');
+	print("GYR: "); printchar('0' + ((stat>>(2*2))&3)); printchar(' ');
+	print("ACC: "); printchar('0' + ((stat>>(1*2))&3)); printchar(' ');
+	print("MAG: "); printchar('0' + ((stat>>(0*2))&3)); printchar('\n');
+}
+
 int main(void) {
 	/* GPIO 18 = DIG 2 = host TX = device RX (SCL) = ORANGE wire
 	 * GPIO 23 = DIG 7 = host RX = device TX (SDA) = GREEN  wire
@@ -201,6 +215,13 @@ int main(void) {
 	print("BIST: ");
 	print(bistcheck()? "FAIL": "OK");
 	printchar('\n');
+
+	setmode(MODE_NDOF);
+
+	for (;;) {
+		printcalibstat(calibstat());
+		sleep(500*MS);
+	}
 
 	return 0;
 }
