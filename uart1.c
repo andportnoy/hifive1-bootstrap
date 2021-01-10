@@ -21,6 +21,8 @@ struct gpio volatile *const gpio  = (void *)GPIOADDR;
 
 #define _(x) [x] = #x
 
+#define UART_TRIES 2
+
 char *errstr[] = {
 	_(WRITE_SUCCESS),
 	_(READ_FAIL),
@@ -55,12 +57,13 @@ u8 uart1read(void) {
 	return rx;
 }
 
-int bnoread(u8 regaddr, u8 *data, u8 len) {
+int bnoread_retry(u8 regaddr, u8 *data, u8 len, int tries) {
 	u8 command[] = {0xaa, 0x01, regaddr, len};
 	for (int i=0, n=sizeof command; i<n; ++i)
 		uart1write(command[i]);
 
 	u8 header = uart1read();
+	u8 status;
 
 	switch (header) {
 	case 0xbb: /* success */
@@ -70,16 +73,28 @@ int bnoread(u8 regaddr, u8 *data, u8 len) {
 			return TRUNCATED_READ;
 		for (int i=0, n=rlen; i<n; ++i)
 			data[i] = uart1read();
-		return 0;
+		status = 0;
+		break;
 	}
 	case 0xee: /* error */
-		return uart1read();
+		status = uart1read();
+		break;
 	default:
-		return BAD_STATE;
+		status = BAD_STATE;
+		break;
 	}
+
+	if (tries>1 && status==BUS_OVER_RUN_ERROR)
+		return bnoread_retry(regaddr, data, len, tries-1);
+
+	return status;
 }
 
-int bnowrite(u8 regaddr, const u8 *data, u8 len) {
+int bnoread(u8 regaddr, u8 *data, u8 len) {
+	return bnoread_retry(regaddr, data, len, UART_TRIES);
+}
+
+int bnowrite_retry(u8 regaddr, const u8 *data, u8 len, int tries) {
 	u8 command[] = {0xaa, 0x00, regaddr, len};
 	for (int i=0, n=sizeof command; i<n; ++i)
 		uart1write(command[i]);
@@ -95,8 +110,14 @@ int bnowrite(u8 regaddr, const u8 *data, u8 len) {
 
 	if (status == WRITE_SUCCESS)
 		return 0;
+	else if (tries>1 && status==BUS_OVER_RUN_ERROR)
+		return bnowrite_retry(regaddr, data, len, tries-1);
 	else
 		return status;
+}
+
+int bnowrite(u8 regaddr, const u8 *data, u8 len) {
+	return bnowrite_retry(regaddr, data, len, UART_TRIES);
 }
 
 void printbytes(u8 *data, int len) {
