@@ -61,6 +61,13 @@ void printword(u32 w) {
 	}
 }
 
+void printbyte(u8 byte) {
+	for (int i=0; i<8; i+=4) {
+		u8 n = (byte>>(4-i))&0xf;
+		printchar(n<0xa? '0'+n: 'a'-0xa+n);
+	}
+}
+
 void printdword(u64 dw) {
 	printword(dw>>32);
 	printword(dw);

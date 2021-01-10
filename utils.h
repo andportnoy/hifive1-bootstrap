@@ -158,6 +158,7 @@ void *memcpy(void *dest, const void *src, size_t n);
 void uartinit(void);
 void timerinit(void (*isr)(void));
 void print(char *s);
+void printbyte(u8 byte);
 void printword(u32 w);
 void printdword(u64 dw);
 void printchar(char c);
