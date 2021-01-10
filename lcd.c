@@ -9,7 +9,7 @@ enum {
 
 #define MASK (rs|e|d0|d1|d2|d3|d4|d5|d6|d7)
 
-void pulse(void) {
+void lcdpulse(void) {
 	gpio->output_val |= e;
 	/* need 140 ns, one cycle is about 60 ns */
 	__asm__ volatile ("addi zero,zero,0");
@@ -35,7 +35,7 @@ void lcdbyte(char c) {
 void lcdprint(char *s) {
 	while (*s) {
 		lcdbyte(*s++);
-		pulse();
+		lcdpulse();
 		sleep(16e3);
 	}
 }
@@ -53,22 +53,22 @@ void lcdclear(void) {
 	u32 val = gpio->output_val;
 	gpio->output_val &= ~rs;
 	lcdbyte(1);
-	pulse();
+	lcdpulse();
 	gpio->output_val = val;
 }
 
 void lcdinit(void) {
 	lcdbyte(0x38);
-	pulse();
+	lcdpulse();
 	sleep(16e4);
 
 	/* screen on, no cursor, no cursor position */
 	lcdbyte(0x0c);
-	pulse();
+	lcdpulse();
 	sleep(16e4);
 
 	lcdbyte(0x01);
-	pulse();
+	lcdpulse();
 	sleep(16e4);
 
 	/* data mode */
