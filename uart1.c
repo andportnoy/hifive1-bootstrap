@@ -7,7 +7,10 @@ struct gpio volatile *const gpio  = (void *)GPIOADDR;
 #define TXFULL  (1<<31)
 #define RXEMPTY (1<<31)
 
-#define REG_OPR_MODE 0x3d
+#define REG_ST_RESULT   0x36
+#define REG_SYS_ERR     0x3a
+#define REG_OPR_MODE    0x3d
+#define REG_SYS_TRIGGER 0x3f
 
 #define WRITE_SUCCESS             0x01
 #define READ_FAIL                 0x02
@@ -155,6 +158,28 @@ void setmode(u8 mode) {
 	sleep(19*MS); /* 19 ms to switch between modes */
 }
 
+int postcheck(void) {
+	u8 stresult;
+	CHECK(bnoread(REG_ST_RESULT, &stresult, sizeof stresult));
+	return ~stresult & 0xf;
+}
+
+int bistcheck(void) {
+	/* assume we are in CONFIG mode */
+
+	/* set bit SELF_TEST in the SYS_TRIGGER register */
+	u8 self_test = 1;
+	CHECK(bnowrite(REG_SYS_TRIGGER, &self_test, sizeof self_test));
+
+	/* wait 400 ms */
+	sleep(400*MS);
+
+	/* check SYS_ERR: 0 if success else 3 */
+	u8 sys_err;
+	CHECK(bnoread(REG_SYS_ERR, &sys_err, sizeof sys_err));
+	return sys_err;
+}
+
 int main(void) {
 	/* GPIO 18 = DIG 2 = host TX = device RX (SCL) = ORANGE wire
 	 * GPIO 23 = DIG 7 = host RX = device TX (SDA) = GREEN  wire
@@ -167,17 +192,15 @@ int main(void) {
 	/* sleep for a second, BNO 055 takes at least 650 ms to power on */
 	sleep(16*1000*1000);
 
-	switch (getmode()) {
-	case MODE_CONFIG: print("CONFIG mode\n"); break;
-	case MODE_NDOF:   print("NDOF mode\n");   break;
-	}
+	print("POST: ");
+	print(postcheck()? "FAIL": "OK");
+	printchar('\n');
 
-	setmode(MODE_NDOF);
+	setmode(MODE_CONFIG);
 
-	switch (getmode()) {
-	case MODE_CONFIG: print("CONFIG mode\n"); break;
-	case MODE_NDOF:   print("NDOF mode\n");   break;
-	}
+	print("BIST: ");
+	print(bistcheck()? "FAIL": "OK");
+	printchar('\n');
 
 	return 0;
 }
